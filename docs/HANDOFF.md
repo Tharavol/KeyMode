@@ -25,8 +25,11 @@ snapshot.
   The stub models installed addons (`stub.AddAddon`), dependencies and per-character
   enable state; `stub_spec.lua` pins that model. Character keys (GUID, name, nil) are
   treated as distinct until #6 says how the client resolves them.
-- Not yet checked in-game: panel layout (#3), the compartment entry and the
-  `INV_Relics_Hourglass` icon (#4).
+- Checked in-game (PR #32 checklist): panel layout and debug checkbox/`/km debug` sync
+  (#3), the compartment entry, its click/hover behaviour and the `INV_Relics_Hourglass`
+  keystone icon (#4), and `help`/`status`/unknown-command output (#2). KeyMode does not
+  appear in HidingBar: HidingBar collects LibDataBroker launchers and minimap buttons,
+  not individual compartment entries. A broker launcher is an open question for #26.
 - `## Version` in the TOC is the literal `@project-version@`, substituted by the
   packager from the release tag. Do not edit it.
 - License: GPL-3.0-or-later. `LICENSE` is the full GPLv3 text; `Core.lua` (the first
@@ -46,7 +49,7 @@ the "live" column as unconfirmed.
 | Enabled means `GetAddOnEnableState(i, character) > Enum.AddOnEnableState.None` | same | -- |
 | Blizzard calls `C_AddOns.SaveAddOns()` on "Okay" and `C_AddOns.ResetAddOns()` on "Cancel" | same | -- |
 | The Addon Compartment passes `UnitName("player")` (not the GUID) and counts an addon only when `GetAddOnEnableState(i, name) == Enum.AddOnEnableState.All`; `Enum.AddOnEnableState` is None = 0, Some = 1, All = 2 | `Blizzard_Minimap/Mainline/AddonCompartment.lua`, `AddOnsDocumentation.lua` | -- |
-| Compartment TOC fields are `AddonCompartmentFunc`, `AddonCompartmentFuncOnEnter`, `AddonCompartmentFuncOnLeave`, called as globals with `(addonName, buttonName)` and `(addonName, menuButton)`; icon from `IconTexture` or `IconAtlas` | `AddonCompartment.lua` | -- |
+| Compartment TOC fields are `AddonCompartmentFunc`, `AddonCompartmentFuncOnEnter`, `AddonCompartmentFuncOnLeave`, called as globals with `(addonName, buttonName)` and `(addonName, menuButton)`; icon from `IconTexture` or `IconAtlas` | `AddonCompartment.lua` | yes (PR #32) |
 | Enable state is stored per character in `WTF\Account\<ACCOUNT>\<Realm>\<Character>\AddOns.txt` as `Name: enabled|disabled` and rewritten by the client on logout | observed on disk | -- |
 
 Source: `Gethe/wow-ui-source`, `live` branch, fetched 2026-10-08.
