@@ -31,8 +31,8 @@ Features (planned for 1.0)
 - **Prompt on arrival.** Optionally offers to switch on entering a Mythic+ dungeon or
   joining a keystone group, and to switch back on leaving. Never prompts in combat or
   during an active keystone, and never switches without a click.
-- **Entry points.** `/keymode` (alias `/km`), an Addon Compartment entry, an optional
-  minimap button, and a key binding.
+- **Entry points.** `/keymode` (alias `/km`), a minimap button, an Addon Compartment
+  entry, and a key binding.
 
 Installation
 ------------
@@ -53,11 +53,14 @@ Tharavol addons.
 - `/km status` - show the current mode and settings
 - `/km version` - show the addon version
 - `/km reset` - restore settings to defaults; profiles and pending restores are kept
+- `/km minimap [on|off]` - toggle or set the minimap button
 - `/km debug [on|off]` - toggle or set debug messages
 - `/km help` - list every command
 
-The Addon Compartment (the addon button by the minimap) also lists KeyMode: left-click
-opens the options panel, right-click prints status.
+The minimap button and the Addon Compartment entry (the addon button by the minimap)
+do the same thing: left-click opens the options panel, right-click prints status. Drag
+the minimap button around the minimap edge to move it; minimap-button bars such as
+HidingBar can collect it.
 
 Release notes are in [CHANGELOG.md](CHANGELOG.md).
 

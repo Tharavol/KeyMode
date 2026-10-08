@@ -56,6 +56,18 @@ function WidgetMethods:GetText() return self._text end
 function WidgetMethods:SetChecked(checked) self._checked = checked and true or false end
 function WidgetMethods:GetChecked() return self._checked or false end
 function WidgetMethods:GetName() return self.name end
+function WidgetMethods:SetSize(width, height) self._width, self._height = width, height end
+function WidgetMethods:GetSize() return self._width, self._height end
+function WidgetMethods:GetWidth() return self._width end
+function WidgetMethods:GetHeight() return self._height end
+function WidgetMethods:SetPoint(...) self._point = { ... } end
+function WidgetMethods:ClearAllPoints() self._point = nil end
+function WidgetMethods:GetPoint() if self._point then return unpack(self._point) end end
+function WidgetMethods:HasScript() return true end
+function WidgetMethods:IsProtected() return false end
+function WidgetMethods:GetObjectType() return self.kind end
+function WidgetMethods:SetTexture(texture) self._texture = texture end
+function WidgetMethods:GetTexture() return self._texture end
 function WidgetMethods:GetParent() return self.parent end
 function WidgetMethods:Click(button)
     local onClick = self._scripts.OnClick
@@ -244,13 +256,25 @@ local function MakeFixtures()
         settingsOpened = {}, -- category IDs passed to Settings.OpenToCategory
         reloads = 0,
         inCombat = false,
+        cursor = { x = 0, y = 0 },  -- GetCursorPosition, in screen pixels
+        minimapShape = nil,         -- GetMinimapShape is only defined when this is set
     }
-    -- KeyMode itself is always installed, enabled and loaded.
-    M.AddAddon(fixtures, "KeyMode", {
-        title = "KeyMode", loaded = true,
-        metadata = { Version = "@project-version@", Title = "KeyMode" },
-    })
+    -- KeyMode itself is always installed, enabled and loaded, with whatever metadata its
+    -- real TOC declares, so the stub and the TOC cannot disagree about a field.
+    M.AddAddon(fixtures, "KeyMode", { title = "KeyMode", loaded = true, metadata = M.TocMetadata() })
     return fixtures
+end
+
+-- Every `## Field: value` line of KeyMode.toc, as GetAddOnMetadata would return it.
+function M.TocMetadata()
+    local handle = assert(io.open("KeyMode.toc", "r"), "run from the repository root")
+    local metadata = {}
+    for line in handle:lines() do
+        local key, value = line:gsub("\r$", ""):match("^##%s*([%w%-]+)%s*:%s*(.-)%s*$")
+        if key then metadata[key] = value end
+    end
+    handle:close()
+    return metadata
 end
 
 local function TocFiles()
@@ -280,6 +304,12 @@ function M.Load(configure)
         return w
     end
     env.UIParent = MakeWidget(env, "Frame", "UIParent")
+    -- A 140x140 minimap centred at (1000, 600) at scale 1, roughly the default layout.
+    env.Minimap = MakeWidget(env, "Frame", "Minimap")
+    env.Minimap:SetSize(140, 140)
+    env.Minimap.GetCenter = function() return 1000, 600 end
+    env.Minimap.GetEffectiveScale = function() return fixtures.minimapScale or 1 end
+    env.GetCursorPosition = function() return fixtures.cursor.x, fixtures.cursor.y end
     env.DEFAULT_CHAT_FRAME = {
         AddMessage = function(_, text) fixtures.chat[#fixtures.chat + 1] = text end,
     }
@@ -310,6 +340,9 @@ function M.Load(configure)
     }
 
     if configure then configure(env, fixtures) end
+    if fixtures.minimapShape then
+        env.GetMinimapShape = function() return fixtures.minimapShape end
+    end
 
     local ns = {}
     for _, path in ipairs(TocFiles()) do

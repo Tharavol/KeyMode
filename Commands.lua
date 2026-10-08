@@ -33,7 +33,7 @@ local function Toggle(key, value, label)
         ns.Print("'" .. value .. "' - expected 'on' or 'off'.")
         return
     end
-    ns.Options:Refresh()
+    ns.SettingsChanged()
     ns.Print(label .. " is " .. OnOff(ns.db.settings[key]) .. ".")
 end
 
@@ -100,9 +100,13 @@ local COMMANDS = {
         help = { Cmd("/km reset") .. " - restore settings to defaults (profiles are kept)" },
         handler = function()
             ns.ResetSettings()
-            ns.Options:Refresh()
             ns.Print("Settings restored to defaults.")
         end,
+    },
+    {
+        name = "minimap",
+        help = { Cmd("/km minimap [on|off]") .. " - toggle or set the minimap button" },
+        handler = function(_, rest) Toggle("minimapButton", rest, "Minimap button") end,
     },
     {
         name = "debug",

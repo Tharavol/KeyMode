@@ -29,6 +29,11 @@ Options.CHECKBOXES = {
         label = "Debug messages",
         tooltip = "Print diagnostic messages to chat. Same as /km debug.",
     },
+    {
+        key = "minimapButton",
+        label = "Show minimap button",
+        tooltip = "Show KeyMode's button on the minimap edge. Drag it to move it. Same as /km minimap.",
+    },
 }
 
 local function CreatePanel()
@@ -77,6 +82,7 @@ local function CreatePanel()
         checkbox.tooltipText = definition.tooltip
         checkbox:SetScript("OnClick", function(self)
             ns.db.settings[definition.key] = self:GetChecked() and true or false
+            ns.SettingsChanged()
         end)
         checkbox.definition = definition
         panel.checkboxes[#panel.checkboxes + 1] = checkbox
@@ -89,7 +95,6 @@ local function CreatePanel()
     reset:SetText("Reset to Defaults")
     reset:SetScript("OnClick", function()
         ns.ResetSettings()
-        Options:Refresh()
         ns.Print("Settings restored to defaults.")
     end)
     panel.resetButton = reset
@@ -112,6 +117,7 @@ end
 
 -- Registered once at load: the category has to exist for the Settings window to list it.
 function Options:Register()
+ns.OnSettingsChanged(function() Options:Refresh() end)
     if not (Settings and Settings.RegisterCanvasLayoutCategory) then return end
     self.panel = CreatePanel()
     local category = Settings.RegisterCanvasLayoutCategory(self.panel, ADDON_NAME)
@@ -127,3 +133,4 @@ function Options:Open()
 end
 
 Options:Register()
+ns.OnSettingsChanged(function() Options:Refresh() end)
