@@ -6,7 +6,8 @@ saved set of addons before Mythic+ and restores the full setup afterwards -- one
 one `/reload`.
 
 > **Status: pre-release.** Development is tracked in milestones v0.1.0 through v1.0.0;
-> see [docs/PLAN.md](docs/PLAN.md). Nothing below is functional until v0.3.0.
+> see [docs/PLAN.md](docs/PLAN.md). The options panel, the commands and the Addon
+> Compartment entry work; switching itself arrives with v0.3.0.
 
 Why
 ---
@@ -42,13 +43,21 @@ Copy the folder to:
 Commands
 --------
 (alias: `/km`) -- follows the cross-addon slash command standard used by the other
-Tharavol addons. The full list arrives with v0.1.0; planned:
+Tharavol addons.
 
-- `/keymode` - open the options panel (also: `options`, `config`, `gui`)
-- `/keymode on [profile]` / `off` / `toggle` - switch modes (shows the preview first)
-- `/keymode preview [profile]` - show what a switch would change, without reloading
-- `/keymode status` - current mode, active profile, snapshot age
-- `/keymode version`, `/keymode reset`, `/keymode help`, `/keymode debug [on|off]`
+- `/km` - open the options panel (also: `options`, `config`, `gui`)
+- `/km on [profile]` - switch to M+ mode, showing the preview first *(v0.3.0)*
+- `/km off` - restore the addons this character had before *(v0.3.0)*
+- `/km toggle` - switch to whichever mode is not active *(v0.3.0)*
+- `/km preview [profile]` - list what a switch would change, without reloading *(v0.3.0)*
+- `/km status` - show the current mode and settings
+- `/km version` - show the addon version
+- `/km reset` - restore settings to defaults; profiles and pending restores are kept
+- `/km debug [on|off]` - toggle or set debug messages
+- `/km help` - list every command
+
+The Addon Compartment (the addon button by the minimap) also lists KeyMode: left-click
+opens the options panel, right-click prints status.
 
 Release notes are in [CHANGELOG.md](CHANGELOG.md).
 

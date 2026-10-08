@@ -40,11 +40,22 @@ jobs:
           unzip -l "$zip"
           unzip -l "$zip" | grep -q 'KeyMode/KeyMode.toc'
           unzip -l "$zip" | grep -q 'KeyMode/Core.lua'
+          unzip -l "$zip" | grep -q 'KeyMode/Inventory.lua'
+          unzip -l "$zip" | grep -q 'KeyMode/Profiles.lua'
+          unzip -l "$zip" | grep -q 'KeyMode/Switch.lua'
+          unzip -l "$zip" | grep -q 'KeyMode/Triggers.lua'
+          unzip -l "$zip" | grep -q 'KeyMode/UI.lua'
+          unzip -l "$zip" | grep -q 'KeyMode/Options.lua'
+          unzip -l "$zip" | grep -q 'KeyMode/Commands.lua'
 
           # Dev-only tooling / docs; .pkgmeta ignores them, and they should stay ignored.
           # A bare `!` here would be exempt from set -e and silently not fail.
           if unzip -l "$zip" | grep -q 'KeyMode/tests/'; then
             echo "tests/ should not ship in the release archive (see .pkgmeta)" >&2
+            exit 1
+          fi
+          if unzip -l "$zip" | grep -q 'KeyMode/docs/'; then
+            echo "docs/ should not ship in the release archive (see .pkgmeta)" >&2
             exit 1
           fi
           if unzip -l "$zip" | grep -q 'KeyMode/CHANGELOG.md'; then

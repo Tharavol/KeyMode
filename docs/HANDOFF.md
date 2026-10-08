@@ -10,11 +10,23 @@ snapshot.
 
 ## Current state
 
-- Scaffolding only. `Core.lua` holds the namespace, `ns.Print`, `ns.GetAddonVersion`,
-  SavedVariables defaults and the `ADDON_LOADED` handler. Everything else is planned in
-  [PLAN.md](PLAN.md) and tracked as GitHub milestones v0.1.0-v1.0.0.
+- v0.1.0 in progress. Files, in TOC load order:
+  - `Core.lua` -- namespace, `ns.Print`, `ns.Debug`, `ns.GetAddonVersion`, SavedVariables
+    defaults, `ns.ResetSettings`, the `ADDON_LOADED` handler.
+  - `Inventory.lua`, `Profiles.lua`, `Triggers.lua` -- module tables only (v0.2.0-v0.5.0).
+  - `Switch.lua` -- `Switch:IsActive()`, always false until v0.3.0.
+  - `UI.lua` -- Addon Compartment handlers (globals named in the TOC).
+  - `Options.lua` -- Settings canvas panel; `Options.CHECKBOXES` drives the General
+    section; `Options:Refresh()` re-reads every widget from `ns.db`.
+  - `Commands.lua` -- loads last; `/keymode`, `/km`; `Commands.COMMANDS` drives both
+    dispatch and help.
 - Tests: `tests/stub_api.lua` loads every file `KeyMode.toc` lists, in TOC order, into
   an isolated environment per test; `tests/run_tests.lua` runs the `*_spec.lua` files.
+  The stub models installed addons (`stub.AddAddon`), dependencies and per-character
+  enable state; `stub_spec.lua` pins that model. Character keys (GUID, name, nil) are
+  treated as distinct until #6 says how the client resolves them.
+- Not yet checked in-game: panel layout (#3), the compartment entry and the
+  `INV_Relics_Hourglass` icon (#4).
 - `## Version` in the TOC is the literal `@project-version@`, substituted by the
   packager from the release tag. Do not edit it.
 - License: GPL-3.0-or-later. `LICENSE` is the full GPLv3 text; `Core.lua` (the first
@@ -33,6 +45,8 @@ the "live" column as unconfirmed.
 | Blizzard's in-game AddOn list passes `UnitGUID("player")` as `character`, and `nil` for "All characters" | `Blizzard_AddOnList/AddonList.lua` (`addonCharacter = UnitGUID("player")`, `GetAddonCharacter`) | -- |
 | Enabled means `GetAddOnEnableState(i, character) > Enum.AddOnEnableState.None` | same | -- |
 | Blizzard calls `C_AddOns.SaveAddOns()` on "Okay" and `C_AddOns.ResetAddOns()` on "Cancel" | same | -- |
+| The Addon Compartment passes `UnitName("player")` (not the GUID) and counts an addon only when `GetAddOnEnableState(i, name) == Enum.AddOnEnableState.All`; `Enum.AddOnEnableState` is None = 0, Some = 1, All = 2 | `Blizzard_Minimap/Mainline/AddonCompartment.lua`, `AddOnsDocumentation.lua` | -- |
+| Compartment TOC fields are `AddonCompartmentFunc`, `AddonCompartmentFuncOnEnter`, `AddonCompartmentFuncOnLeave`, called as globals with `(addonName, buttonName)` and `(addonName, menuButton)`; icon from `IconTexture` or `IconAtlas` | `AddonCompartment.lua` | -- |
 | Enable state is stored per character in `WTF\Account\<ACCOUNT>\<Realm>\<Character>\AddOns.txt` as `Name: enabled|disabled` and rewritten by the client on logout | observed on disk | -- |
 
 Source: `Gethe/wow-ui-source`, `live` branch, fetched 2026-10-08.
