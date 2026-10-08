@@ -68,6 +68,8 @@ ns.defaults = {
     snapshots = {},
     settings = {
         debug = false,
+        minimapButton = true,  -- shown by default (#34)
+        minimapAngle = 225,    -- degrees counter-clockwise from the minimap's right edge
     },
 }
 
@@ -96,6 +98,25 @@ ns.ApplyDefaults = ApplyDefaults
 function ns.ResetSettings()
     ns.db.settings = {}
     ApplyDefaults(ns.db.settings, ns.defaults.settings)
+    ns.SettingsChanged()
+end
+
+-- Settings can change from the options panel, a slash command, a reset or a drag. Every
+-- view that reflects a setting registers here once, and every writer calls
+-- SettingsChanged afterwards, so no writer needs to know which views exist.
+local settingsListeners = {}
+function ns.OnSettingsChanged(fn)
+    settingsListeners[#settingsListeners + 1] = fn
+end
+function ns.SettingsChanged()
+    for _, fn in ipairs(settingsListeners) do fn() end
+end
+
+-- Work that needs ns.db (anything reading a saved setting at startup) registers here and
+-- runs once, at this addon's ADDON_LOADED, in registration (= TOC) order.
+local loadedListeners = {}
+function ns.OnLoaded(fn)
+    loadedListeners[#loadedListeners + 1] = fn
 end
 
 local frame = CreateFrame("Frame")
@@ -107,5 +128,6 @@ frame:SetScript("OnEvent", function(self, event, name)
         ApplyDefaults(KeyModeDB, ns.defaults)
         ns.db = KeyModeDB
         self:UnregisterEvent("ADDON_LOADED")
+        for _, fn in ipairs(loadedListeners) do fn() end
     end
 end)

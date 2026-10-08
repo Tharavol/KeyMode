@@ -57,7 +57,7 @@ return function(stub, T)
                 return real(kind, name, parent, template)
             end
         end)
-        T.AssertEqual(#env.ns.Options.panel.checkboxes, 1, "checkbox still created")
+        T.AssertEqual(#env.ns.Options.panel.checkboxes, #env.ns.Options.CHECKBOXES, "checkboxes still created")
         T.AssertTrue(env.ns.Options.panel.resetButton ~= nil, "rest of the panel built")
     end)
 end

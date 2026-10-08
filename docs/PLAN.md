@@ -11,7 +11,7 @@ build on the switch engine, so it lands and is verified before any UI goes on to
 | v0.2.0 | Addon inventory and live API verification | Every C_AddOns assumption confirmed in-game and written down |
 | v0.3.0 | Profiles and the switch engine | Enter/exit M+ mode from the command line, restore is exact |
 | v0.4.0 | Preview dialog and profile editor | No profile editing or switching needs a slash command |
-| v0.5.0 | Triggers and entry points | Arrival and departure prompts, compartment, key binding |
+| v0.5.0 | Triggers and entry points | Arrival and departure prompts, key binding |
 | v1.0.0 | Polish pass and stable release | QA matrix passed, docs final, v1.0.0 tagged and released |
 
 ## v0.1.0 -- Scaffolding and command surface
@@ -48,6 +48,9 @@ build on the switch engine, so it lands and is verified before any UI goes on to
   dependencies and cycles. Pure functions, fully covered by tests.
 - **Protected addons.** KeyMode itself can never be disabled. A user-editable protect
   list (default: BugGrabber, BugSack) is skipped by every profile.
+- **Minimap button.** Hand-made, no library, shown by default, draggable, with the same
+  click actions as the compartment entry and a `/km minimap` toggle. Collectable by
+  HidingBar. (Moved here from v0.5.0 after the v0.1.0 check, #34.)
 - **Safe-to-switch guard.** One function answering "may a switch happen now, and if not
   why": combat lockdown, an active keystone (`C_ChallengeMode.IsChallengeModeActive`),
   an encounter in progress. Every entry point goes through it.
@@ -94,8 +97,7 @@ build on the switch engine, so it lands and is verified before any UI goes on to
   instance, or on leaving the group, offer to restore.
 - **Prompt rules.** Never in combat or during an active key; "not now" snoozes for the
   session; each trigger has its own toggle in options.
-- **Key binding and minimap button.** `Bindings.xml` toggle binding; an optional,
-  hand-rolled minimap button (no library dependency), off by default.
+- **Key binding.** `Bindings.xml` toggle binding. (The minimap button moved to v0.2.0.)
 
 ## v1.0.0 -- Polish pass and stable release
 

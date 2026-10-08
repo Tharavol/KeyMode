@@ -30,6 +30,9 @@ read_globals = {
 
     -- Frame / UI globals
     "CreateFrame", "DEFAULT_CHAT_FRAME", "GameTooltip", "Settings",
+    "Minimap", "GetCursorPosition",
+    -- Defined by minimap-reshaping addons, not the base client; always nil-checked
+    "GetMinimapShape",
 
     -- Player and session state
     "InCombatLockdown", "ReloadUI", "UnitGUID", "UnitName",
