@@ -6,8 +6,9 @@ saved set of addons before Mythic+ and restores the full setup afterwards -- one
 one `/reload`.
 
 > **Status: pre-release.** Development is tracked in milestones v0.1.0 through v1.0.0;
-> see [docs/PLAN.md](docs/PLAN.md). The options panel, the commands and the Addon
-> Compartment entry work; switching itself arrives with v0.3.0.
+> see [docs/PLAN.md](docs/PLAN.md). v0.1.0: the options panel, the commands, the
+> minimap button and the Addon Compartment entry work; switching itself arrives with
+> v0.3.0.
 
 Why
 ---
