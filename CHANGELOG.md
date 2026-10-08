@@ -4,6 +4,13 @@ All notable changes to the KeyMode addon are documented in this file.
 
 ## [Unreleased]
 
+- Minimap button, shown by default: left-click opens options, right-click prints
+  status, drag to move it around the minimap edge (round and reshaped minimaps).
+  `/km minimap [on|off]` and a "Show minimap button" checkbox toggle it. Built to be
+  collectable by minimap-button bars such as HidingBar; no library dependency (#34).
+
+## [0.1.0]
+
 - Repository scaffolding: TOC, `Core.lua` (namespace, `ns.Print`, version helper,
   SavedVariables defaults), CI (luacheck, TOC validation, stub-API tests, packager dry
   run), release and pre-release workflows, daily TOC Interface check, and docs.

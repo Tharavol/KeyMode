@@ -15,7 +15,8 @@ snapshot.
     defaults, `ns.ResetSettings`, the `ADDON_LOADED` handler.
   - `Inventory.lua`, `Profiles.lua`, `Triggers.lua` -- module tables only (v0.2.0-v0.5.0).
   - `Switch.lua` -- `Switch:IsActive()`, always false until v0.3.0.
-  - `UI.lua` -- Addon Compartment handlers (globals named in the TOC).
+  - `UI.lua` -- Addon Compartment handlers (globals named in the TOC) and the minimap
+    button (#34); both route through `UI:OnEntryClick` / `UI:ShowEntryTooltip`.
   - `Options.lua` -- Settings canvas panel; `Options.CHECKBOXES` drives the General
     section; `Options:Refresh()` re-reads every widget from `ns.db`.
   - `Commands.lua` -- loads last; `/keymode`, `/km`; `Commands.COMMANDS` drives both
@@ -25,11 +26,17 @@ snapshot.
   The stub models installed addons (`stub.AddAddon`), dependencies and per-character
   enable state; `stub_spec.lua` pins that model. Character keys (GUID, name, nil) are
   treated as distinct until #6 says how the client resolves them.
+- Settings plumbing: writers call `ns.SettingsChanged()`; views register with
+  `ns.OnSettingsChanged(fn)`. Startup work needing `ns.db` registers with
+  `ns.OnLoaded(fn)`, run at KeyMode's `ADDON_LOADED` in TOC order.
+- Not yet checked in-game: the minimap button's placement, dragging, persistence over
+  `/reload`, and collection by HidingBar (#34).
 - Checked in-game (PR #32 checklist): panel layout and debug checkbox/`/km debug` sync
   (#3), the compartment entry, its click/hover behaviour and the `INV_Relics_Hourglass`
   keystone icon (#4), and `help`/`status`/unknown-command output (#2). KeyMode does not
   appear in HidingBar: HidingBar collects LibDataBroker launchers and minimap buttons,
-  not individual compartment entries. A broker launcher is an open question for #26.
+  not individual compartment entries. Decided: a hand-made minimap button instead of a
+  broker launcher (#34).
 - `## Version` in the TOC is the literal `@project-version@`, substituted by the
   packager from the release tag. Do not edit it.
 - License: GPL-3.0-or-later. `LICENSE` is the full GPLv3 text; `Core.lua` (the first
@@ -53,6 +60,19 @@ the "live" column as unconfirmed.
 | Enable state is stored per character in `WTF\Account\<ACCOUNT>\<Realm>\<Character>\AddOns.txt` as `Name: enabled|disabled` and rewritten by the client on logout | observed on disk | -- |
 
 Source: `Gethe/wow-ui-source`, `live` branch, fetched 2026-10-08.
+
+### Minimap button (#34)
+
+| Fact | Source | Live |
+| --- | --- | --- |
+| HidingBar collects a child of `Minimap` or `MinimapBackdrop` that is named, unprotected, square (sides within 5px), larger than 16px and under half the minimap's size, with an `OnClick`/`OnMouseUp`/`OnMouseDown` script | HidingBar v12.1.5 `HidingBar.lua`, `grabMinimapAddonsButtons`, `addMButton` | -- |
+| HidingBar scans in `C_Timer.After(0)` after its own `ADDON_LOADED` (optionally again after a delay), so a button made at KeyMode's `ADDON_LOADED` exists by then | same, `ADDON_LOADED` -> `setProfile` -> `init` | -- |
+| Mainline minimap button layout: 31px button, `MEDIUM` strata level 8; border 136430 at 50x50 `TOPLEFT`; background 136467 at 24x24 `CENTER`; icon 18x18 `CENTER`; highlight 136477; 5px beyond the edge; default angle 225 | LibDBIcon-1.0 MINOR 56 (bundled with HidingBar) | -- |
+| `GetMinimapShape` shape names and which quadrants each rounds | same, `minimapShapes` | -- |
+
+LibDBIcon's bundled copy carries no license header or file, so KeyMode reuses only
+these facts; `UI.lua`'s code is its own, and `minimap_spec.lua` checks the shape rule
+against LibDBIcon's table as data.
 
 ## Design rules
 
