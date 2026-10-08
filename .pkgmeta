@@ -1,0 +1,13 @@
+package-as: KeyMode
+
+manual-changelog:
+  filename: CHANGELOG.md
+  markup-type: markdown
+
+ignore:
+  - .github
+  - .luacheckrc
+  - docs
+  - scripts
+  - tests
+  - CHANGELOG.md

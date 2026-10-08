@@ -1,0 +1,11 @@
+## Interface: 120100
+## Title: KeyMode
+## Notes: Switches to a lean, saved set of addons before Mythic+ and restores your full setup afterwards, with one click and one reload
+## Author: Tharavol, Claude
+## Version: @project-version@
+## IconTexture: Interface\Icons\INV_Relics_Hourglass
+## X-License: GPL-3.0-or-later
+## X-Website: https://github.com/Tharavol/KeyMode
+## SavedVariables: KeyModeDB
+
+Core.lua

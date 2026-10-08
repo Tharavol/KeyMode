@@ -1,0 +1,19 @@
+# OS junk
+Thumbs.db
+desktop.ini
+
+# Editor/IDE
+.vscode/
+.idea/
+
+# Claude / AI tool scratch files
+.claude/
+CLAUDE.md
+scratch/
+
+# Manual test plan (local working document, not shipped with the addon)
+TESTS.md
+
+# Packaging output
+.release/
+*.zip
