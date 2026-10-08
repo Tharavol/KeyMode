@@ -29,6 +29,9 @@ build on the switch engine, so it lands and is verified before any UI goes on to
 - **Addon Compartment entry and icon.** `## AddonCompartmentFunc` opening the options
   panel. Verify in-game that `INV_Relics_Hourglass` renders as the keystone icon;
   pick another if not.
+- **Minimap button.** Hand-made, no library, shown by default, draggable, with the same
+  click actions as the compartment entry and a `/km minimap` toggle. Collectable by
+  HidingBar. (Added after the in-game check, moved from v0.5.0, #34.)
 - **Test harness: C_AddOns fixture model.** Extend `tests/stub_api.lua` with an
   installed-addon table (name, title, deps, LoD, per-character enable state) so the
   engine issues in v0.2.0-v0.3.0 can be test-first.
@@ -48,9 +51,6 @@ build on the switch engine, so it lands and is verified before any UI goes on to
   dependencies and cycles. Pure functions, fully covered by tests.
 - **Protected addons.** KeyMode itself can never be disabled. A user-editable protect
   list (default: BugGrabber, BugSack) is skipped by every profile.
-- **Minimap button.** Hand-made, no library, shown by default, draggable, with the same
-  click actions as the compartment entry and a `/km minimap` toggle. Collectable by
-  HidingBar. (Moved here from v0.5.0 after the v0.1.0 check, #34.)
 - **Safe-to-switch guard.** One function answering "may a switch happen now, and if not
   why": combat lockdown, an active keystone (`C_ChallengeMode.IsChallengeModeActive`),
   an encounter in progress. Every entry point goes through it.
@@ -97,7 +97,7 @@ build on the switch engine, so it lands and is verified before any UI goes on to
   instance, or on leaving the group, offer to restore.
 - **Prompt rules.** Never in combat or during an active key; "not now" snoozes for the
   session; each trigger has its own toggle in options.
-- **Key binding.** `Bindings.xml` toggle binding. (The minimap button moved to v0.2.0.)
+- **Key binding.** `Bindings.xml` toggle binding. (The minimap button moved to v0.1.0.)
 
 ## v1.0.0 -- Polish pass and stable release
 

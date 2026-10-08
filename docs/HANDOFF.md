@@ -10,7 +10,8 @@ snapshot.
 
 ## Current state
 
-- v0.1.0 in progress. Files, in TOC load order:
+- v0.1.0 released as a pre-release. Next: v0.2.0 (inventory and live API
+  verification, starting with #6). Files, in TOC load order:
   - `Core.lua` -- namespace, `ns.Print`, `ns.Debug`, `ns.GetAddonVersion`, SavedVariables
     defaults, `ns.ResetSettings`, the `ADDON_LOADED` handler.
   - `Inventory.lua`, `Profiles.lua`, `Triggers.lua` -- module tables only (v0.2.0-v0.5.0).
