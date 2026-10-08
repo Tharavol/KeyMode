@@ -24,10 +24,15 @@ local M = {}
 
 local function NoOp() end
 
+-- Child-region fields a template creates (`checkbox.Text`). Without the template they
+-- don't exist on the live client either, so the catch-all must not invent them.
+local TEMPLATE_FIELDS = { Text = true }
+
 local WidgetMethods = {}
 WidgetMethods.__index = function(_, key)
     local method = WidgetMethods[key]
     if method ~= nil then return method end
+    if TEMPLATE_FIELDS[key] then return nil end
     return NoOp
 end
 

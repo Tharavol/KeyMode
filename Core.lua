@@ -34,6 +34,13 @@ function ns.Print(...)
     DEFAULT_CHAT_FRAME:AddMessage(PREFIX .. table.concat(parts, " "))
 end
 
+-- Diagnostic output, shown only while debug mode is on (`/km debug`).
+function ns.Debug(...)
+    if ns.db and ns.db.settings.debug then
+        ns.Print("|cff999999[debug]|r", ...)
+    end
+end
+
 -- Returns a display-ready version string with exactly one leading "v". The packager
 -- substitutes `@project-version@` with the release tag, which already carries a "v";
 -- an unbuilt git clone leaves the token as-is, which is reported as "dev".
@@ -81,6 +88,15 @@ local function ApplyDefaults(target, defaults)
     end
 end
 ns.ApplyDefaults = ApplyDefaults
+
+-- Restores `settings` to defaults, and nothing else (S9 of the slash command standard):
+-- profiles and pending snapshots are the player's data, not settings, and a reset that
+-- dropped a snapshot would strand a character in M+ mode with no way back. Shared by
+-- `/km reset` and the options panel's button so the two cannot drift apart.
+function ns.ResetSettings()
+    ns.db.settings = {}
+    ApplyDefaults(ns.db.settings, ns.defaults.settings)
+end
 
 local frame = CreateFrame("Frame")
 ns.eventFrame = frame
