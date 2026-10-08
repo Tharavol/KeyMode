@@ -13,7 +13,7 @@ return function(stub, T)
 
     T.Test("packaged tag gets exactly one leading v", function()
         local env = stub.Load(function(_, fixtures)
-            fixtures.metadata.KeyMode.Version = "v1.0.0"
+            fixtures.addons[1].metadata.Version = "v1.0.0"
         end)
         T.AssertEqual(env.ns.GetAddonVersion(), "v1.0.0")
     end)
