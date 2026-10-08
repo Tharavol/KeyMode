@@ -14,14 +14,25 @@ ignore = {
 globals = {
     -- SavedVariables declared in the .toc
     "KeyModeDB",
+
+    -- Slash command registration
+    "SLASH_KEYMODE1", "SLASH_KEYMODE2", "SlashCmdList",
+
+    -- Addon Compartment callbacks named in the .toc; the client looks them up in _G
+    "KeyMode_OnAddonCompartmentClick",
+    "KeyMode_OnAddonCompartmentEnter",
+    "KeyMode_OnAddonCompartmentLeave",
 }
 
 read_globals = {
     -- Namespaced API tables
-    "C_AddOns",
+    "C_AddOns", "Enum",
 
     -- Frame / UI globals
-    "CreateFrame", "DEFAULT_CHAT_FRAME",
+    "CreateFrame", "DEFAULT_CHAT_FRAME", "GameTooltip", "Settings",
+
+    -- Player and session state
+    "InCombatLockdown", "ReloadUI", "UnitGUID", "UnitName",
 
     -- Pre-C_AddOns fallback the version helper still branches on
     "GetAddOnMetadata",

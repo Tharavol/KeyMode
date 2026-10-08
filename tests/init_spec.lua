@@ -13,7 +13,7 @@ return function(stub, T)
 
     T.Test("packaged tag gets exactly one leading v", function()
         local env = stub.Load(function(_, fixtures)
-            fixtures.metadata.KeyMode.Version = "v1.0.0"
+            fixtures.addons[1].metadata.Version = "v1.0.0"
         end)
         T.AssertEqual(env.ns.GetAddonVersion(), "v1.0.0")
     end)
@@ -39,6 +39,13 @@ return function(stub, T)
         local env = stub.Load()
         stub.Fire(env, "ADDON_LOADED", "SomeOtherAddon")
         T.AssertEqual(env.KeyModeDB, nil)
+    end)
+
+    T.Test("every module table is exported on ns", function()
+        local env = stub.Load()
+        for _, name in ipairs({ "Inventory", "Profiles", "Switch", "Triggers", "UI", "Options", "Commands" }) do
+            T.AssertEqual(type(env.ns[name]), "table", name)
+        end
     end)
 
     T.Test("Print applies the prefix", function()
