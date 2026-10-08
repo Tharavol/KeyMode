@@ -7,6 +7,9 @@
 ## X-License: GPL-3.0-or-later
 ## X-Website: https://github.com/Tharavol/KeyMode
 ## SavedVariables: KeyModeDB
+## AddonCompartmentFunc: KeyMode_OnAddonCompartmentClick
+## AddonCompartmentFuncOnEnter: KeyMode_OnAddonCompartmentEnter
+## AddonCompartmentFuncOnLeave: KeyMode_OnAddonCompartmentLeave
 
 Core.lua
 Inventory.lua
