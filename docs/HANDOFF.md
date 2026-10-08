@@ -29,8 +29,10 @@ snapshot.
 - Settings plumbing: writers call `ns.SettingsChanged()`; views register with
   `ns.OnSettingsChanged(fn)`. Startup work needing `ns.db` registers with
   `ns.OnLoaded(fn)`, run at KeyMode's `ADDON_LOADED` in TOC order.
-- Not yet checked in-game: the minimap button's placement, dragging, persistence over
-  `/reload`, and collection by HidingBar (#34).
+- Checked in-game (PR #35 checklist): the minimap button's look, clicks, tooltip,
+  dragging and persistence over `/reload`, `/km minimap` and checkbox sync, collection
+  by HidingBar, and HidingBar keeping it when it is hidden and shown again (#34).
+  Reshaped (non-round) minimaps have not been tried in-game.
 - Checked in-game (PR #32 checklist): panel layout and debug checkbox/`/km debug` sync
   (#3), the compartment entry, its click/hover behaviour and the `INV_Relics_Hourglass`
   keystone icon (#4), and `help`/`status`/unknown-command output (#2). KeyMode does not
@@ -65,9 +67,9 @@ Source: `Gethe/wow-ui-source`, `live` branch, fetched 2026-10-08.
 
 | Fact | Source | Live |
 | --- | --- | --- |
-| HidingBar collects a child of `Minimap` or `MinimapBackdrop` that is named, unprotected, square (sides within 5px), larger than 16px and under half the minimap's size, with an `OnClick`/`OnMouseUp`/`OnMouseDown` script | HidingBar v12.1.5 `HidingBar.lua`, `grabMinimapAddonsButtons`, `addMButton` | -- |
-| HidingBar scans in `C_Timer.After(0)` after its own `ADDON_LOADED` (optionally again after a delay), so a button made at KeyMode's `ADDON_LOADED` exists by then | same, `ADDON_LOADED` -> `setProfile` -> `init` | -- |
-| Mainline minimap button layout: 31px button, `MEDIUM` strata level 8; border 136430 at 50x50 `TOPLEFT`; background 136467 at 24x24 `CENTER`; icon 18x18 `CENTER`; highlight 136477; 5px beyond the edge; default angle 225 | LibDBIcon-1.0 MINOR 56 (bundled with HidingBar) | -- |
+| HidingBar collects a child of `Minimap` or `MinimapBackdrop` that is named, unprotected, square (sides within 5px), larger than 16px and under half the minimap's size, with an `OnClick`/`OnMouseUp`/`OnMouseDown` script | HidingBar v12.1.5 `HidingBar.lua`, `grabMinimapAddonsButtons`, `addMButton` | yes (PR #35) |
+| HidingBar scans in `C_Timer.After(0)` after its own `ADDON_LOADED` (optionally again after a delay), so a button made at KeyMode's `ADDON_LOADED` exists by then | same, `ADDON_LOADED` -> `setProfile` -> `init` | yes (PR #35) |
+| Mainline minimap button layout: 31px button, `MEDIUM` strata level 8; border 136430 at 50x50 `TOPLEFT`; background 136467 at 24x24 `CENTER`; icon 18x18 `CENTER`; highlight 136477; 5px beyond the edge; default angle 225 | LibDBIcon-1.0 MINOR 56 (bundled with HidingBar) | yes (PR #35) |
 | `GetMinimapShape` shape names and which quadrants each rounds | same, `minimapShapes` | -- |
 
 LibDBIcon's bundled copy carries no license header or file, so KeyMode reuses only

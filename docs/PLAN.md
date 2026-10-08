@@ -1,8 +1,8 @@
 # KeyMode development plan
 
 Six milestones, each a GitHub milestone of the same name with one issue per bullet.
-Each milestone ends with a tagged release of that version; the v0.x tags are usable
-builds but not feature complete. Work is merged in milestone order -- later milestones
+Each milestone ends with a tagged release of that version. Every v0.x tag is published
+as a GitHub pre-release (`release.yml` flags it); v1.0.0 is the first stable release. Work is merged in milestone order -- later milestones
 build on the switch engine, so it lands and is verified before any UI goes on top of it.
 
 | Milestone | Theme | Exit criteria |

@@ -3,8 +3,9 @@ name: Release
 on:
   push:
     tags:
-      # Stable releases only -- v1.2.0-alpha.1 etc. go through prerelease.yml
-      # instead, so the two workflows never both fire on the same tag.
+      # Plain vX.Y.Z tags only -- v1.2.0-alpha.1 etc. go through prerelease.yml
+      # instead, so the two workflows never both fire on the same tag. v0.x tags
+      # land here too and are flagged as pre-releases below.
       - "v[0-9]+.[0-9]+.[0-9]+"
 
 permissions:
@@ -29,6 +30,17 @@ jobs:
           # exists, so that path is deliberately not wired up.
           WOWI_API_TOKEN: ${{ secrets.WOWI_API_TOKEN }}
           WAGO_API_TOKEN: ${{ secrets.WAGO_API_TOKEN }}
+
+      # Every v0.x release is a pre-release (decided in #31), but packager only marks a
+      # GitHub release as one when the tag says alpha/beta. Rather than renaming tags away
+      # from the milestone versions, flag the release after packager has created it.
+      # Nothing else is published (no WOWI/Wago secrets are set), so GitHub is the only
+      # place this applies.
+      - name: Mark v0.x as pre-release
+        if: startsWith(github.ref_name, 'v0.')
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release edit "$GITHUB_REF_NAME" --prerelease --repo "$GITHUB_REPOSITORY"
 
       # CI's dry-run build verifies layout too, but it skips itself on this
       # exact commit (see ci.yml) since packager won't double-build a tagged
