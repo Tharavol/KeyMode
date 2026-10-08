@@ -9,3 +9,10 @@
 ## SavedVariables: KeyModeDB
 
 Core.lua
+Inventory.lua
+Profiles.lua
+Switch.lua
+Triggers.lua
+UI.lua
+Options.lua
+Commands.lua

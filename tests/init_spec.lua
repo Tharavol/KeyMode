@@ -41,6 +41,13 @@ return function(stub, T)
         T.AssertEqual(env.KeyModeDB, nil)
     end)
 
+    T.Test("every module table is exported on ns", function()
+        local env = stub.Load()
+        for _, name in ipairs({ "Inventory", "Profiles", "Switch", "Triggers", "UI", "Options", "Commands" }) do
+            T.AssertEqual(type(env.ns[name]), "table", name)
+        end
+    end)
+
     T.Test("Print applies the prefix", function()
         local env = stub.Load()
         env.ns.Print("hello", 42)
