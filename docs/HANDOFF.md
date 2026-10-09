@@ -20,6 +20,8 @@ snapshot.
     button (#34); both route through `UI:OnEntryClick` / `UI:ShowEntryTooltip`.
   - `Options.lua` -- Settings canvas panel; `Options.CHECKBOXES` drives the General
     section; `Options:Refresh()` re-reads every widget from `ns.db`.
+  - `Probe.lua` -- `/km debug probe`, the in-game enable-state checks for #6 (see
+    "Enable-state probe procedure").
   - `Commands.lua` -- loads last; `/keymode`, `/km`; `Commands.COMMANDS` drives both
     dispatch and help.
 - Tests: `tests/stub_api.lua` loads every file `KeyMode.toc` lists, in TOC order, into
@@ -64,6 +66,34 @@ the "live" column as unconfirmed.
 
 Source: `Gethe/wow-ui-source`, `live` branch, fetched 2026-10-08.
 
+### Enable-state probe procedure (#6)
+
+`/km debug probe` (`Probe.lua`) prints what the client reports; its mutations touch only
+the `KeyModeProbe` fixture. Setup: copy `tests/fixtures/KeyModeProbe` into
+`Interface\AddOns`, log in on character A, and keep character B (same realm) and C
+(another realm) for the cross-character checks. `<key>` is one of `guid`, `name`,
+`full` (Name-Realm), `zero` (`"0"`), `all` (nil).
+
+1. `/km debug probe scan` -- reason strings, dependency-name case, missing deps,
+   `## Category` count, and whether `IsEncounterInProgress` /
+   `C_ChallengeMode.IsChallengeModeActive` exist. Record the output.
+2. `/km debug probe` -- baseline states for every key; `deps (as returned)` shows
+   whether `keymode` comes back lowercased or as the folder name.
+3. For each of `guid`, `name`, `zero`, `all`: `/km debug probe disable <key>` (does the
+   report change at once, and under which keys?), then `/reload` without saving -- did
+   `KeyModeProbe: loaded` print? Re-enable with the same key before the next one.
+4. `/km debug probe disable guid`, `/km debug probe save`, `/reload` -- the fixture must
+   not load. Repeat without `save` to learn whether `SaveAddOns()` is required.
+5. `/km debug probe disable guid`, `/km debug probe reset` -- does `ResetAddOns()` undo
+   an unsaved change?
+6. With the fixture disabled by `guid` and saved: log out, read
+   `WTF\Account\<ACCOUNT>\<Realm>\<A>\AddOns.txt`, then log in on B and C -- the fixture
+   must still load there.
+7. Disable by `all` and save; check B and C again, then restore.
+
+Results go in the "API facts" table above (and the stub's character-key model is
+corrected to match) before #7 builds on them.
+
 ### Minimap button (#34)
 
 | Fact | Source | Live |
@@ -87,5 +117,6 @@ against LibDBIcon's table as data.
   keystone, encounter).
 - **Pure planning, thin applying.** Inventory, dependency graph and switch plan are pure
   functions over plain tables so they can be tested offline; only `Switch.lua` calls the
-  mutating C_AddOns functions.
+  mutating C_AddOns functions. The one exception is `Probe.lua` (#6), which only ever
+  changes the `KeyModeProbe` fixture addon.
 - **KeyMode is always protected.** It can never appear in a disable plan.
