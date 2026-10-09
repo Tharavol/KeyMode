@@ -36,6 +36,8 @@ read_globals = {
 
     -- Player and session state
     "InCombatLockdown", "ReloadUI", "UnitGUID", "UnitName",
+    -- Safe-to-switch guard inputs; each is nil-checked, IsEncounterInProgress unverified on 12.x
+    "C_ChallengeMode", "IsEncounterInProgress",
 
     -- Pre-C_AddOns fallback the version helper still branches on
     "GetAddOnMetadata",

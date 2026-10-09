@@ -57,6 +57,7 @@ return function(stub, T)
         T.AssertTrue(Has(lines, "Mode: Normal"), "mode")
         T.AssertTrue(Has(lines, "Debug messages: off"), "setting")
         T.AssertTrue(Has(lines, "Protected: BugGrabber, BugSack, KeyMode"), "protect list")
+        T.AssertTrue(Has(lines, "Switch allowed: yes"), "guard")
     end)
 
     T.Test("S7: version prints name and version", function()

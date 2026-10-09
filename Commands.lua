@@ -86,6 +86,8 @@ local COMMANDS = {
             ns.Print("  Mode: " .. (ns.Switch:IsActive() and "Mythic+" or "Normal"))
             ns.Print("  Profiles: " .. CountKeys(ns.db.profiles))
             ns.Print("  Protected: " .. table.concat(ns.Profiles:ProtectedList(), ", "))
+            local canSwitch, reason = ns.Inventory:CanSwitch()
+            ns.Print("  Switch allowed: " .. (canSwitch and "yes" or ("no (" .. reason .. ")")))
             for _, definition in ipairs(ns.Options.CHECKBOXES) do
                 ns.Print("  " .. definition.label .. ": " .. OnOff(ns.db.settings[definition.key]))
             end

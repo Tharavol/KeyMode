@@ -256,6 +256,8 @@ local function MakeFixtures()
         settingsOpened = {}, -- category IDs passed to Settings.OpenToCategory
         reloads = 0,
         inCombat = false,
+        challengeModeActive = false, -- C_ChallengeMode.IsChallengeModeActive
+        encounterInProgress = false, -- IsEncounterInProgress
         cursor = { x = 0, y = 0 },  -- GetCursorPosition, in screen pixels
         minimapShape = nil,         -- GetMinimapShape is only defined when this is set
     }
@@ -325,6 +327,13 @@ function M.Load(configure)
     env.UnitGUID = function(unit) return unit == "player" and fixtures.player.guid or nil end
     env.UnitName = function(unit) return unit == "player" and fixtures.player.name or nil end
     env.InCombatLockdown = function() return fixtures.inCombat end
+    -- The safe-to-switch guard's inputs. A test models a client that lacks one by setting
+    -- it to nil, in `configure` or afterwards (`env.IsEncounterInProgress = nil`); the
+    -- lookup then falls through to the host _G, which has no WoW globals.
+    env.C_ChallengeMode = {
+        IsChallengeModeActive = function() return fixtures.challengeModeActive end,
+    }
+    env.IsEncounterInProgress = function() return fixtures.encounterInProgress end
     env.ReloadUI = function() fixtures.reloads = fixtures.reloads + 1 end
 
     env.SlashCmdList = {}
