@@ -96,7 +96,7 @@ return function(stub, T)
         T.AssertTrue(Has(lines, "differing in case from the folder: 2"), "datastore and keymode")
         T.AssertTrue(Has(lines, "Altoholic -> datastore (folder DataStore)"), "mismatch listed")
         T.AssertTrue(Has(lines, "dependencies not installed: 1"), "NotHere")
-        T.AssertTrue(Has(lines, "IsEncounterInProgress false"), "API presence reported")
+        T.AssertTrue(Has(lines, "IsEncounterInProgress true"), "API presence reported")
     end)
 
     T.Test("debug on/off still toggles", function()
