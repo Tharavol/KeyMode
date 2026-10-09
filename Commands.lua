@@ -85,6 +85,7 @@ local COMMANDS = {
             ns.Print(ADDON_NAME .. " " .. ns.GetAddonVersion() .. " status:")
             ns.Print("  Mode: " .. (ns.Switch:IsActive() and "Mythic+" or "Normal"))
             ns.Print("  Profiles: " .. CountKeys(ns.db.profiles))
+            ns.Print("  Protected: " .. table.concat(ns.Profiles:ProtectedList(), ", "))
             for _, definition in ipairs(ns.Options.CHECKBOXES) do
                 ns.Print("  " .. definition.label .. ": " .. OnOff(ns.db.settings[definition.key]))
             end
@@ -97,7 +98,7 @@ local COMMANDS = {
     },
     {
         name = "reset",
-        help = { Cmd("/km reset") .. " - restore settings to defaults (profiles are kept)" },
+        help = { Cmd("/km reset") .. " - restore settings to defaults (profiles and the protect list are kept)" },
         handler = function()
             ns.ResetSettings()
             ns.Print("Settings restored to defaults.")

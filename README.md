@@ -53,7 +53,7 @@ Tharavol addons.
 - `/km preview [profile]` - list what a switch would change, without reloading *(v0.3.0)*
 - `/km status` - show the current mode and settings
 - `/km version` - show the addon version
-- `/km reset` - restore settings to defaults; profiles and pending restores are kept
+- `/km reset` - restore settings to defaults; profiles, the protect list and pending restores are kept
 - `/km minimap [on|off]` - toggle or set the minimap button
 - `/km debug [on|off]` - toggle or set debug messages
 - `/km help` - list every command
