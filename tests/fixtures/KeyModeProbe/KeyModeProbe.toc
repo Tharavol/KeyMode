@@ -1,0 +1,8 @@
+## Interface: 120100
+## Title: KeyModeProbe
+## Notes: Throwaway target for KeyMode's /km debug probe (#6). Does nothing but announce that it loaded.
+## Author: Tharavol
+## Version: 1
+## Dependencies: keymode
+
+KeyModeProbe.lua

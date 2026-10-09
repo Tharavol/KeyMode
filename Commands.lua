@@ -110,8 +110,19 @@ local COMMANDS = {
     },
     {
         name = "debug",
-        help = { Cmd("/km debug [on|off]") .. " - toggle or set debug messages" },
-        handler = function(_, rest) Toggle("debug", rest, "Debug messages") end,
+        help = {
+            Cmd("/km debug [on|off]") .. " - toggle or set debug messages",
+            Cmd("/km debug probe [scan|enable|disable|save|reset|<addon>]")
+                .. " - addon API diagnostics (see docs/HANDOFF.md)",
+        },
+        handler = function(argument, rest)
+            local word, probeArgs = argument:match("^(%S+)%s*(.-)$")
+            if word and word:lower() == "probe" then
+                ns.Probe:Run(probeArgs)
+                return
+            end
+            Toggle("debug", rest, "Debug messages")
+        end,
     },
     {
         name = "help",
