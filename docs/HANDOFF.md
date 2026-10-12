@@ -40,6 +40,13 @@ snapshot.
 - Settings plumbing: writers call `ns.SettingsChanged()`; views register with
   `ns.OnSettingsChanged(fn)`. Startup work needing `ns.db` registers with
   `ns.OnLoaded(fn)`, run at KeyMode's `ADDON_LOADED` in TOC order.
+- Checked in-game (v0.2.0, 2026-10-12): the #6 probe session (see "API facts"), and
+  `/km debug probe inventory` against a 199-folder install. The client lists 192 addons;
+  the other 7 folders carry only Classic-flavour TOCs (DBM-Azeroth, DBM-Party-Forever,
+  DBM-Test-*), are not offered on Retail, and so never appear in the inventory. 166
+  enabled for the character, matching 26 `DISABLED` reasons. The DataStore, Altoholic
+  and DBM-Core cascades matched the TOC files on disk, including `RequiredDeps` lines and
+  DataStore's own dependency on AddonFactory.
 - Checked in-game (PR #35 checklist): the minimap button's look, clicks, tooltip,
   dragging and persistence over `/reload`, `/km minimap` and checkbox sync, collection
   by HidingBar, and HidingBar keeping it when it is hidden and shown again (#34).
