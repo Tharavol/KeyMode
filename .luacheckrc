@@ -35,7 +35,9 @@ read_globals = {
     "GetMinimapShape",
 
     -- Player and session state
-    "InCombatLockdown", "ReloadUI", "UnitGUID", "UnitName", "UnitFullName",
+    "InCombatLockdown", "ReloadUI", "UnitGUID", "UnitName", "UnitFullName", "time",
+    -- Recovery reminder (#15); nil-checked
+    "IsInInstance", "IsInGroup",
 
     -- Safe-to-switch guard inputs (#10), also probed by `/km debug probe scan` (#6);
     -- each is nil-checked, IsEncounterInProgress unverified on 12.x

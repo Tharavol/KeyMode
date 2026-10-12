@@ -22,7 +22,9 @@ return function(stub, T)
         local env = stub.Load()
         stub.Fire(env, "ADDON_LOADED", "KeyMode")
         T.AssertEqual(env.KeyModeDB.dbVersion, env.ns.DB_VERSION, "dbVersion")
-        T.AssertEqual(type(env.KeyModeDB.profiles), "table", "profiles")
+        T.AssertEqual(type(env.KeyModeDB.lists.instance), "table", "instance list")
+        T.AssertEqual(type(env.KeyModeDB.lists.world), "table", "world list")
+        T.AssertEqual(env.KeyModeDB.profiles, nil, "no profiles")
         T.AssertEqual(env.KeyModeDB.settings.debug, false, "settings.debug")
         T.AssertTrue(env.ns.db == env.KeyModeDB, "ns.db aliases the saved table")
     end)
@@ -43,7 +45,7 @@ return function(stub, T)
 
     T.Test("every module table is exported on ns", function()
         local env = stub.Load()
-        for _, name in ipairs({ "Inventory", "Profiles", "Switch", "Triggers", "UI", "Options", "Commands" }) do
+        for _, name in ipairs({ "Inventory", "Profiles", "Plan", "Switch", "Triggers", "UI", "Options", "Commands" }) do
             T.AssertEqual(type(env.ns[name]), "table", name)
         end
     end)

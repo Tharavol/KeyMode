@@ -32,7 +32,7 @@ end
 function UI:ShowEntryTooltip(owner, extraHint)
     GameTooltip:SetOwner(owner, "ANCHOR_LEFT")
     GameTooltip:AddLine(ADDON_NAME)
-    GameTooltip:AddLine("Mode: " .. (ns.Switch:IsActive() and "|cff00ff00Mythic+|r" or "Normal"), 1, 1, 1)
+    GameTooltip:AddLine("Mode: " .. ns.Switch:ModeLabel(), 1, 1, 1)
     GameTooltip:AddLine("Left-click: options", 0.6, 0.6, 0.6)
     GameTooltip:AddLine("Right-click: status", 0.6, 0.6, 0.6)
     if extraHint then GameTooltip:AddLine(extraHint, 0.6, 0.6, 0.6) end

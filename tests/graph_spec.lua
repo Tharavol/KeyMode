@@ -118,6 +118,12 @@ return function(stub, T)
         T.AssertEqual(Join(Inventory.Dependents(g, { "A", "B", "C" })), "", "all inputs, nothing added")
     end)
 
+    T.Test("a Blizzard_ dependency is part of the client, not missing", function()
+        local g = Build({ { "CraftSim", { "Blizzard_Professions" } } })
+        T.AssertEqual(g.missing.CraftSim, nil, "not reported missing")
+        T.AssertEqual(Join(g.deps.CraftSim), "", "no edge")
+    end)
+
     T.Test("a self-dependency is dropped", function()
         local g = Build({ { "Narcissus", { "Narcissus", "narcissus" } }, { "Other", { "Narcissus" } } })
         T.AssertEqual(Join(g.deps.Narcissus), "", "no self edge")

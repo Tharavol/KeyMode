@@ -32,7 +32,7 @@ return function(stub, T)
         T.AssertEqual(#env.fixtures.settingsOpened, 1, "left opened panel")
         click("KeyMode", "RightButton")
         T.AssertEqual(#env.fixtures.settingsOpened, 1, "right did not")
-        T.AssertTrue(stub.TakeChat(env)[2]:find("Mode: Normal", 1, true), "status printed")
+        T.AssertTrue(stub.TakeChat(env)[2]:find("Mode: Off", 1, true), "status printed")
     end)
 
     T.Test("hover shows the mode in the tooltip", function()
@@ -40,7 +40,7 @@ return function(stub, T)
         env[TocField("AddonCompartmentFuncOnEnter")]("KeyMode", {})
         local found = false
         for _, line in ipairs(env.GameTooltip._lines) do
-            if line:find("Mode: Normal", 1, true) then found = true end
+            if line:find("Mode: Off", 1, true) then found = true end
         end
         T.AssertTrue(found, "mode line")
         env[TocField("AddonCompartmentFuncOnLeave")]("KeyMode", {})

@@ -277,6 +277,8 @@ local function MakeFixtures()
         inCombat = false,
         challengeModeActive = false, -- C_ChallengeMode.IsChallengeModeActive
         encounterInProgress = false, -- IsEncounterInProgress
+        inInstance = false,          -- IsInInstance
+        inGroup = false,             -- IsInGroup
         cursor = { x = 0, y = 0 },  -- GetCursorPosition, in screen pixels
         minimapShape = nil,         -- GetMinimapShape is only defined when this is set
     }
@@ -312,8 +314,10 @@ local function TocFiles()
 end
 M.TocFiles = TocFiles
 
-function M.Load(configure)
-    local fixtures = MakeFixtures()
+-- `fixtures` is passed only by M.Reload, to carry the installed addons and their enable
+-- state across a simulated reload.
+function M.Load(configure, fixtures)
+    fixtures = fixtures or MakeFixtures()
     local env = setmetatable({}, { __index = _G })
     env._G = env
     env.fixtures = fixtures
@@ -354,6 +358,9 @@ function M.Load(configure)
     }
     env.IsEncounterInProgress = function() return fixtures.encounterInProgress end
     env.ReloadUI = function() fixtures.reloads = fixtures.reloads + 1 end
+    env.IsInInstance = function() return fixtures.inInstance end
+    env.IsInGroup = function() return fixtures.inGroup end
+    env.time = os.time
 
     env.SlashCmdList = {}
     env.Settings = {
@@ -409,6 +416,23 @@ function M.Slash(env, line)
 end
 
 -- Loads the addon and fires ADDON_LOADED, the state every non-init spec starts from.
+-- A /reload or a fresh login: a new addon environment over the same installed addons,
+-- enable state and SavedVariables, with ADDON_LOADED and PLAYER_LOGIN fired. Each
+-- addon's `loaded` follows its enable state for the player, as the client would load it.
+-- The mutation log and chat are cleared so the new session starts clean.
+function M.Reload(env)
+    local fixtures, db = env.fixtures, env.KeyModeDB
+    for _, entry in ipairs(fixtures.addons) do
+        entry.loaded = entry.name == "KeyMode"
+            or (entry.enabledFor[fixtures.player.guid] and not entry.loadOnDemand) or false
+    end
+    fixtures.calls, fixtures.chat = {}, {}
+    local new = M.Load(function(e) e.KeyModeDB = db end, fixtures)
+    M.Fire(new, "ADDON_LOADED", "KeyMode")
+    M.Fire(new, "PLAYER_LOGIN")
+    return new
+end
+
 function M.Boot(configure)
     local env = M.Load(configure)
     M.Fire(env, "ADDON_LOADED", "KeyMode")

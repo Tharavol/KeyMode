@@ -58,13 +58,21 @@ end
 
 -- Schema version for KeyModeDB. Bump it, and add a migration, whenever the shape of a
 -- saved table changes; never reinterpret an old shape in place.
-ns.DB_VERSION = 1
+ns.DB_VERSION = 2
 
 ns.defaults = {
     dbVersion = ns.DB_VERSION,
-    -- Account-wide: profile name -> { disable = { [addonName] = true } }. (v0.3.0)
-    profiles = {},
-    -- Keyed by UnitGUID("player"): the pre-switch enable state to restore. (v0.3.0)
+    -- Account-wide: the two fixed addon sets (#37), each addon name -> true. Instance is
+    -- what to turn off in Mythic Keystone dungeons and raids, World what to turn off the
+    -- rest of the time (empty by default, so World mode is the baseline as it was).
+    lists = {
+        instance = {},
+        world = {},
+    },
+    -- Keyed by UnitGUID("player"): { taken, mode, state = { [addonName] = enabled } }.
+    -- `state` is the character's baseline, its own setup before KeyMode first switched
+    -- it; `mode` is "instance" or "world". No entry means KeyMode is not managing that
+    -- character. (#11, #12)
     snapshots = {},
     -- Account-wide: addon name -> true (protected) or false (a default the player
     -- removed). A removal is stored as false, never nil, because ApplyDefaults refills
@@ -100,8 +108,8 @@ end
 ns.ApplyDefaults = ApplyDefaults
 
 -- Restores `settings` to defaults, and nothing else (S9 of the slash command standard):
--- profiles, the protect list and pending snapshots are the player's data, not settings,
--- and a reset that dropped a snapshot would strand a character in M+ mode with no way
+-- the lists, the protect list and pending snapshots are the player's data, not settings,
+-- and a reset that dropped a snapshot would strand a character in a mode with no way
 -- back. Shared by `/km reset` and the options panel's button so the two cannot drift
 -- apart.
 function ns.ResetSettings()
@@ -121,6 +129,28 @@ function ns.SettingsChanged()
     for _, fn in ipairs(settingsListeners) do fn() end
 end
 
+-- One function per schema version, each upgrading a DB from the version before it.
+-- They run before ApplyDefaults, so a key a migration drops is not refilled first and a
+-- key it reshapes is not shadowed by a fresh default.
+local MIGRATIONS = {
+    -- v0.1.0 and v0.2.0 shipped an always-empty `profiles` table, replaced by `lists`
+    -- (#37). Nothing could fill it, so there is nothing to carry over.
+    [2] = function(db) db.profiles = nil end,
+}
+
+-- Brings a saved DB up to DB_VERSION. An empty table is a first login with nothing to
+-- upgrade. A populated one without dbVersion is treated as version 1, the oldest shape.
+-- A DB from a newer KeyMode keeps its version: it is never downgraded.
+local function Migrate(db)
+    if next(db) == nil then return end
+    local version = tonumber(db.dbVersion) or 1
+    for target = version + 1, ns.DB_VERSION do
+        if MIGRATIONS[target] then MIGRATIONS[target](db) end
+    end
+    db.dbVersion = math.max(version, ns.DB_VERSION)
+end
+ns.Migrate = Migrate
+
 -- Work that needs ns.db (anything reading a saved setting at startup) registers here and
 -- runs once, at this addon's ADDON_LOADED, in registration (= TOC) order.
 local loadedListeners = {}
@@ -134,6 +164,7 @@ frame:RegisterEvent("ADDON_LOADED")
 frame:SetScript("OnEvent", function(self, event, name)
     if event == "ADDON_LOADED" and name == ADDON_NAME then
         KeyModeDB = KeyModeDB or {}
+        Migrate(KeyModeDB)
         ApplyDefaults(KeyModeDB, ns.defaults)
         ns.db = KeyModeDB
         self:UnregisterEvent("ADDON_LOADED")

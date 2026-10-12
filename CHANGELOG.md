@@ -2,6 +2,29 @@
 
 All notable changes to the KeyMode addon are documented in this file.
 
+## [0.3.0]
+
+Switching, from the command line. Named profiles are replaced by two fixed lists (#37):
+**Instance** for Mythic Keystone dungeons and raids, and **World** for the rest of the
+time (empty by default).
+
+- Saved data moves to schema version 2: the Instance and World lists replace the empty
+  `profiles` table, which an upgrade removes. The protect list and settings are kept
+  (#11).
+- The first switch records this character's own setup as its baseline (#12).
+- The switch plan works out what each mode turns off: the mode's list plus every addon
+  that requires something on it. Protected addons, and everything they need, stay on
+  (#13).
+- `/km instance`, `/km world` and `/km off` apply the plan for this character only,
+  save and reload. Off restores the baseline exactly. After each login, addons changed
+  by hand in the AddOn list while in a mode are kept on Off, and a listed addon that is
+  on anyway is reported (#14).
+- The mode survives logout and crashes. Logging in to Instance mode outside an
+  instance and a group prints the way back (#15).
+- New commands: `toggle`, `preview [instance|world|off]`, `list [instance|world]
+  [add|remove <addon>]` and `protect [add|remove <addon>]`. `status`, the tooltip and
+  the options panel show the mode (Instance, World or Off). `on` is gone (#16).
+
 ## [0.2.0]
 
 Addon inventory and live API verification. Still no switching; that is v0.3.0.

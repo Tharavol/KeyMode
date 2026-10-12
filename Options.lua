@@ -2,7 +2,7 @@
 -- SPDX-License-Identifier: GPL-3.0-or-later
 --
 -- The options panel under Options > AddOns > KeyMode. Filled in by #3, and later by the
--- profile editor (#18) and per-trigger toggles (#25).
+-- list editor (#18) and per-trigger toggles (#25).
 
 local ADDON_NAME, ns = ...
 
@@ -52,7 +52,7 @@ local function CreatePanel()
     subtitle:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -8)
     subtitle:SetPoint("RIGHT", panel, "RIGHT", -16, 0)
     subtitle:SetJustifyH("LEFT")
-    subtitle:SetText("Switches to a lean, saved set of addons before Mythic+ and restores "
+    subtitle:SetText("Switches to a lean set of addons for Mythic+ and raids, and back to "
         .. "the full setup afterwards.")
 
     local status = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
@@ -109,7 +109,7 @@ end
 function Options:Refresh()
     local panel = self.panel
     if not (panel and ns.db) then return end
-    panel.statusText:SetText("Mode: " .. (ns.Switch:IsActive() and "|cff00ff00Mythic+|r" or "Normal"))
+    panel.statusText:SetText("Mode: " .. ns.Switch:ModeLabel())
     for _, checkbox in ipairs(panel.checkboxes) do
         checkbox:SetChecked(ns.db.settings[checkbox.definition.key] and true or false)
     end

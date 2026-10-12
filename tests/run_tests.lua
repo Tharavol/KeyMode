@@ -19,6 +19,8 @@ dofile("tests/ui_spec.lua")(stub, T)
 dofile("tests/minimap_spec.lua")(stub, T)
 dofile("tests/probe_spec.lua")(stub, T)
 dofile("tests/graph_spec.lua")(stub, T)
+dofile("tests/plan_spec.lua")(stub, T)
 dofile("tests/inventory_spec.lua")(stub, T)
+dofile("tests/switch_spec.lua")(stub, T)
 
 os.exit(T.Summary() and 0 or 1)

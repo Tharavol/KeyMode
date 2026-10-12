@@ -121,7 +121,11 @@ function Inventory.BuildGraph(records)
         for _, dep in ipairs(list or {}) do
             if type(dep) == "string" then
                 local name = canonical[dep:lower()]
-                if not name then
+                if not name and dep:match("^[Bb]lizzard_") then -- luacheck: ignore 542
+                    -- Part of the client, not the inventory: GetNumAddOns does not count
+                    -- Blizzard_* addons (v0.3.0 check: 191 listed = the Retail folders in
+                    -- Interface\AddOns), so CraftSim's Blizzard_Professions is not missing.
+                elseif not name then
                     absent[dep] = true
                 elseif name ~= owner then
                     found[name] = true

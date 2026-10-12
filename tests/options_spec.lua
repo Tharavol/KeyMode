@@ -26,7 +26,7 @@ return function(stub, T)
         local panel = env.ns.Options.panel
         panel:GetScript("OnShow")(panel)
         T.AssertTrue(panel.checkboxes[1]:GetChecked(), "debug checkbox checked")
-        T.AssertTrue(panel.statusText:GetText():find("Normal", 1, true), "mode line")
+        T.AssertTrue(panel.statusText:GetText():find("Mode: Off", 1, true), "mode line")
     end)
 
     T.Test("clicking a checkbox writes the setting", function()
@@ -37,14 +37,14 @@ return function(stub, T)
         T.AssertEqual(env.KeyModeDB.settings.debug, true)
     end)
 
-    T.Test("reset restores settings but keeps profiles and snapshots", function()
+    T.Test("reset restores settings but keeps the lists and snapshots", function()
         local env = stub.Boot()
         env.KeyModeDB.settings.debug = true
-        env.KeyModeDB.profiles.Keys = { disable = { TomTom = true } }
+        env.KeyModeDB.lists.world.TomTom = true
         env.KeyModeDB.snapshots["Player-1"] = { state = {} }
         env.ns.Options.panel.resetButton:Click()
         T.AssertEqual(env.KeyModeDB.settings.debug, false, "debug reset")
-        T.AssertTrue(env.KeyModeDB.profiles.Keys ~= nil, "profile kept")
+        T.AssertTrue(env.KeyModeDB.lists.world.TomTom, "list kept")
         T.AssertTrue(env.KeyModeDB.snapshots["Player-1"] ~= nil, "snapshot kept")
         T.AssertFalse(env.ns.Options.panel.checkboxes[1]:GetChecked(), "panel refreshed")
     end)
