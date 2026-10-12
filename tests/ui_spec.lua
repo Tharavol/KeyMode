@@ -25,14 +25,17 @@ return function(stub, T)
         end
     end)
 
-    T.Test("left click opens options, right click prints status", function()
-        local env = stub.Boot()
+    T.Test("left click opens the preview dialog for a toggle, right click opens options", function()
+        local env = stub.Boot(function(_, fixtures) stub.AddAddon(fixtures, "TomTom") end)
+        env.ns.Profiles:ListAdd("instance", "TomTom")
         local click = env[TocField("AddonCompartmentFunc")]
         click("KeyMode", "LeftButton")
-        T.AssertEqual(#env.fixtures.settingsOpened, 1, "left opened panel")
+        T.AssertTrue(env.ns.UI.dialog:IsShown(), "left opened the dialog")
+        T.AssertEqual(env.ns.UI.dialog.mode, "instance", "toggle from Off is Instance")
+        T.AssertEqual(#env.fixtures.settingsOpened, 0, "left did not open options")
+        T.AssertEqual(env.fixtures.reloads, 0, "nothing switched yet")
         click("KeyMode", "RightButton")
-        T.AssertEqual(#env.fixtures.settingsOpened, 1, "right did not")
-        T.AssertTrue(stub.TakeChat(env)[2]:find("Mode: Off", 1, true), "status printed")
+        T.AssertEqual(#env.fixtures.settingsOpened, 1, "right opened options")
     end)
 
     T.Test("hover shows the mode in the tooltip", function()

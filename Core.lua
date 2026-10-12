@@ -56,6 +56,19 @@ function ns.GetAddonVersion()
     return version
 end
 
+-- CreateFrame raises immediately if a template doesn't resolve on the running client,
+-- which would abort the rest of the calling file. Blizzard periodically retires UI
+-- templates (Crosshairs #53), so every candidate is tried in order and an untemplated
+-- frame is the last resort rather than an error. Returns the frame and the template
+-- that resolved, or nil when none did. `name` is optional (a global frame name).
+function ns.CreateFrameWithFallback(frameType, parent, templates, name)
+    for _, template in ipairs(templates) do
+        local ok, frame = pcall(CreateFrame, frameType, name, parent, template)
+        if ok and frame then return frame, template end
+    end
+    return CreateFrame(frameType, name, parent), nil
+end
+
 -- Schema version for KeyModeDB. Bump it, and add a migration, whenever the shape of a
 -- saved table changes; never reinterpret an old shape in place.
 ns.DB_VERSION = 2

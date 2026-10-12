@@ -41,6 +41,12 @@ function Switch:Mode()
     return snapshot and snapshot.mode or "off"
 end
 
+-- What a toggle switches to: Instance <-> World, and Instance from Off, the mode KeyMode
+-- exists for.
+function Switch:ToggleTarget()
+    return self:Mode() == "instance" and "world" or "instance"
+end
+
 -- The mode for display: green while KeyMode is managing the character.
 function Switch:ModeLabel()
     local mode = self:Mode()
@@ -83,15 +89,24 @@ end
 -- Switches to `mode` ("instance", "world" or "off"). On success with changes to make it
 -- reloads the UI and does not return in practice; otherwise returns true and a message
 -- (nothing to change) or false and a player-facing reason.
-function Switch:Apply(mode)
+-- Whether a switch to `mode` may start now: a known mode, the guard (#10), and not the
+-- mode already active. Returns true, or false and a player-facing reason. The preview
+-- dialog asks before it opens, and Apply asks again on Confirm, since combat or a key
+-- can start while the dialog is up.
+function Switch:Check(mode)
     if not Switch.MODES[mode] then return false, "Unknown mode '" .. tostring(mode) .. "'." end
     local canSwitch, reason = ns.Inventory:CanSwitch()
     if not canSwitch then return false, "Cannot switch now: " .. reason .. "." end
-    local current = self:Mode()
-    if mode == current then
+    if mode == self:Mode() then
         return false, (mode == "off" and "KeyMode is not managing this character."
             or ("Already in " .. Switch.MODES[mode] .. " mode."))
     end
+    return true
+end
+
+function Switch:Apply(mode)
+    local ok, reason = self:Check(mode)
+    if not ok then return false, reason end
 
     local plan, records = self:Preview(mode)
     local guid = Guid()

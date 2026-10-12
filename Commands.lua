@@ -18,21 +18,13 @@ local function OpenPanel() ns.Options:Open() end
 
 local function Joined(names) return table.concat(names, ", ") end
 
--- Switches, or says why not. On a switch with changes the UI reloads inside Apply.
-local function SwitchTo(mode)
-    local _, message = ns.Switch:Apply(mode)
-    if message then ns.Print(message) end
-end
-
--- Instance <-> World; from Off, Instance, the mode KeyMode exists for.
-local function Toggled()
-    return ns.Switch:Mode() == "instance" and "world" or "instance"
-end
+-- Every switch goes through the preview dialog (#17), which switches only on Confirm.
+local function SwitchTo(mode) ns.UI:Preview(mode) end
 
 -- `/km preview [instance|world|off]`: the plan as text, changing nothing. Bare previews
 -- what `/km toggle` would do.
 local function Preview(rest)
-    local mode = rest ~= "" and rest or Toggled()
+    local mode = rest ~= "" and rest or ns.Switch:ToggleTarget()
     if not ns.Switch.MODES[mode] then
         ns.Print("'" .. rest .. "' - expected 'instance', 'world' or 'off'.")
         return
@@ -166,12 +158,12 @@ local COMMANDS = {
     { name = "gui", help = {}, handler = OpenPanel },
     {
         name = "instance",
-        help = { Cmd("/km instance") .. " - turn off the Instance list and reload" },
+        help = { Cmd("/km instance") .. " - preview turning off the Instance list, then confirm" },
         handler = function() SwitchTo("instance") end,
     },
     {
         name = "world",
-        help = { Cmd("/km world") .. " - turn off the World list and reload" },
+        help = { Cmd("/km world") .. " - preview turning off the World list, then confirm" },
         handler = function() SwitchTo("world") end,
     },
     {
@@ -182,7 +174,7 @@ local COMMANDS = {
     {
         name = "toggle",
         help = { Cmd("/km toggle") .. " - switch between Instance and World mode" },
-        handler = function() SwitchTo(Toggled()) end,
+        handler = function() SwitchTo(ns.Switch:ToggleTarget()) end,
     },
     {
         name = "preview",

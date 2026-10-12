@@ -9,17 +9,7 @@ local ADDON_NAME, ns = ...
 local Options = {}
 ns.Options = Options
 
--- CreateFrame raises immediately if a template doesn't resolve on the running client,
--- which would abort the rest of this file. Blizzard periodically retires UI templates
--- (Crosshairs #53), so every candidate is tried in order and an untemplated frame is the
--- last resort rather than an error.
-local function CreateFrameWithFallback(frameType, parent, templates)
-    for _, template in ipairs(templates) do
-        local ok, frame = pcall(CreateFrame, frameType, nil, parent, template)
-        if ok and frame then return frame, template end
-    end
-    return CreateFrame(frameType, nil, parent), nil
-end
+local CreateFrameWithFallback = ns.CreateFrameWithFallback
 
 -- Checkbox definitions: one table drives both the widgets and their refresh, so adding
 -- a setting is one entry rather than three edits.
