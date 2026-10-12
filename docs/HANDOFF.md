@@ -111,6 +111,23 @@ call, calls `SaveAddOns()` then `ReloadUI()`, and never passes nil or `"0"`.
 
 Source: `Gethe/wow-ui-source`, `live` branch, fetched 2026-10-08.
 
+### UI templates for v0.4.0
+
+Checked against `Gethe/wow-ui-source` branch `live` (12.1.0, build 69933) before any
+v0.4.0 UI was written. Source only: none of these has been tried in-game yet.
+
+| Piece | Where it is defined |
+| --- | --- |
+| `WowScrollBoxList`, `ScrollingEditBoxTemplate` | `Blizzard_SharedXML/Shared/Scroll/ScrollTemplates.xml` |
+| `MinimalScrollBar` | `Blizzard_SharedXML/Shared/Scroll/MinimalScrollBar.xml` |
+| `ScrollUtil.InitScrollBoxListWithScrollBar(scrollBox, scrollBar, view)` | `Blizzard_SharedXML/Shared/Scroll/ScrollUtil.lua` |
+| `CreateScrollBoxListLinearView()` | `Blizzard_SharedXML/Shared/Scroll/ScrollBoxLinearView.lua` |
+| `CreateDataProvider()` | `Blizzard_SharedXML/DataProvider.lua` |
+| `SearchBoxTemplate`, `InputScrollFrameTemplate` | `Blizzard_SharedXML/Shared/InputBox/InputBoxTemplates.xml` |
+| `UICheckButtonTemplate` | `Blizzard_SharedXML/Shared/Button/CheckButtonTemplates.xml` |
+| `UIPanelButtonTemplate` | `Blizzard_SharedXML/Mainline/SharedUIPanelTemplates.xml` |
+| `Settings.RegisterCanvasLayoutSubcategory(parentCategory, frame, name)` | `Blizzard_Settings_Shared/Blizzard_Settings.lua` |
+
 ### Enable-state probe procedure (#6)
 
 `/km debug probe` (`Probe.lua`) prints what the client reports; its mutations touch only
