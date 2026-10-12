@@ -50,10 +50,10 @@ return function(stub, T)
 
     T.Test("encode then decode round-trips", function()
         local lists = { instance = Set("DataStore", "Altoholic"), world = Set("DBM-Core", "WeakAuras") }
-        local r = Decoded(Share.Encode(lists, { "BugGrabber", "BugSack", "KeyMode" }))
+        local r = Decoded(Share.Encode(lists, { "!BugGrabber", "BugSack", "KeyMode" }))
         T.AssertEqual(Join(r.instance), "Altoholic,DataStore")
         T.AssertEqual(Join(r.world), "DBM-Core,WeakAuras")
-        T.AssertEqual(Join(r.protected), "BugGrabber,BugSack", "KeyMode dropped silently")
+        T.AssertEqual(Join(r.protected), "!BugGrabber,BugSack", "KeyMode dropped silently")
         T.AssertEqual(#r.warnings, 0, "no warnings")
     end)
 
@@ -122,7 +122,7 @@ return function(stub, T)
         return {
             instance = Set("DataStore", "Altoholic"),
             world = Set("DBM-Core"),
-            protected = { "BugGrabber", "BugSack", "KeyMode" },
+            protected = { "!BugGrabber", "BugSack", "KeyMode" },
         }
     end
 
@@ -134,7 +134,7 @@ return function(stub, T)
         T.AssertEqual(Join(c.world.add), "")
         T.AssertEqual(Join(c.world.remove), "DBM-Core")
         T.AssertEqual(Join(c.protected.add), "WA")
-        T.AssertEqual(Join(c.protected.remove), "BugGrabber", "KeyMode never removed")
+        T.AssertEqual(Join(c.protected.remove), "!BugGrabber", "KeyMode never removed")
         T.AssertEqual(c.total, 5)
     end)
 
@@ -148,7 +148,7 @@ return function(stub, T)
 
     T.Test("diff replace: an empty [protected] section removes all but KeyMode", function()
         local c = Share.Diff(Current(), Decoded("KeyMode lists 1\n[protected]\n"), "replace")
-        T.AssertEqual(Join(c.protected.remove), "BugGrabber,BugSack")
+        T.AssertEqual(Join(c.protected.remove), "!BugGrabber,BugSack")
     end)
 
     T.Test("diff merge: adds only, never removes", function()
@@ -185,7 +185,7 @@ return function(stub, T)
         T.AssertEqual(Join(P:ListNames("instance")), "DataStore,TSM")
         T.AssertEqual(Join(P:ListNames("world")), "")
         T.AssertEqual(Join(P:ProtectedList()), "BugSack,KeyMode,WA")
-        T.AssertEqual(env.ns.db.protected.BugGrabber, false, "removed default stored as false")
+        T.AssertEqual(env.ns.db.protected["!BugGrabber"], false, "removed default stored as false")
         T.AssertEqual(env.ns.db.lists.instance.Altoholic, nil, "list removal deletes the key")
         T.AssertEqual(env.ns.db.lists.instance.TSM, true)
     end)
@@ -199,6 +199,6 @@ return function(stub, T)
         local changes = Share.Diff(current, incoming, "merge")
         T.AssertEqual(env.ns.Share.Apply(changes, P), 1)
         T.AssertEqual(Join(P:ListNames("world")), "DBM-Core,WeakAuras")
-        T.AssertEqual(Join(P:ProtectedList()), "BugGrabber,BugSack,KeyMode", "protect list untouched")
+        T.AssertEqual(Join(P:ProtectedList()), "!BugGrabber,BugSack,KeyMode", "protect list untouched")
     end)
 end

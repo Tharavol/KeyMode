@@ -57,7 +57,7 @@ return function(stub, T)
         T.AssertTrue(Has(lines, "Mode: Off"), "mode")
         T.AssertTrue(Has(lines, "Lists: Instance 0, World 0"), "lists")
         T.AssertTrue(Has(lines, "Debug messages: off"), "setting")
-        T.AssertTrue(Has(lines, "Protected: BugGrabber, BugSack, KeyMode"), "protect list")
+        T.AssertTrue(Has(lines, "Protected: !BugGrabber, BugSack, KeyMode"), "protect list")
         T.AssertTrue(Has(lines, "Switch allowed: yes"), "guard")
     end)
 

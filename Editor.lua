@@ -40,7 +40,8 @@ Editor.Plain = Plain
 -- `input`: { records, graph, lists = { instance = set, world = set }, isProtected,
 -- search = string, onlyListed = bool, pending = { instance = { [name] = reason }, world }
 -- (a suggestion not yet accepted, #21) }. Returns an ordered list of rows:
---   { name, title, depth, protected,
+--   { name, title, depth, protected (also true when a protected addon requires it),
+--     neededBy (that protected addon's name, or nil),
 --     instance = "listed" | "implied" | "suggested" | nil, world = ...,
 --     impliedBy = { instance, world }, reason = { instance, world } (why it is suggested),
 --     notInstalled = true for a list entry this character does not have }
@@ -87,9 +88,22 @@ function Editor.Rows(input)
         end
     end
 
+    -- What protection keeps on beyond the protected addons themselves: everything they
+    -- require (the plan's `kept`). Shown locked too, naming the protected addon, since
+    -- ticking one would change nothing (BugSack keeps !BugGrabber).
+    local neededBy = {}
+    for _, name in ipairs(graph.names) do
+        if isProtected(name) then
+            for _, required in ipairs(Inventory.Requirements(graph, { name })) do
+                if not isProtected(required) and not neededBy[required] then neededBy[required] = name end
+            end
+        end
+    end
+
     local function MakeRow(name, depth)
-        local protected = isProtected(name)
+        local protected = isProtected(name) or neededBy[name] ~= nil
         return {
+            neededBy = neededBy[name],
             name = name,
             title = titles[name] or name,
             depth = depth,
@@ -189,7 +203,7 @@ local COLUMN_INSTANCE, COLUMN_WORLD, COLUMN_NAME = 14, 84, 150
 local INDENT = 16
 local GREY, GOLD, CLOSE = "|cff999999", "|cffffd200", "|r"
 
-local function SetBox(box, state, protected, impliedBy, label, reason)
+local function SetBox(box, state, protected, impliedBy, label, reason, neededBy)
     box:SetChecked(state ~= nil)
     box:SetAlpha(state == "implied" and 0.45 or 1)
     if protected then box:Disable() else box:Enable() end
@@ -199,6 +213,8 @@ local function SetBox(box, state, protected, impliedBy, label, reason)
     elseif state == "implied" and impliedBy then
         box.tooltip = "Off in " .. label .. " mode because it requires " .. impliedBy
             .. ". Tick it to list it on its own."
+    elseif neededBy then
+        box.tooltip = "Kept on: the protected " .. neededBy .. " requires it."
     elseif protected then
         box.tooltip = "Protected: no switch turns it off. /km protect remove changes that."
     else
@@ -252,13 +268,17 @@ function Editor.InitRow(row, data)
     end
     row.data = data
     SetBox(row.instanceBox, data.instance, data.protected, data.impliedBy.instance, "Instance",
-        data.reason and data.reason.instance)
+        data.reason and data.reason.instance, data.neededBy)
     SetBox(row.worldBox, data.world, data.protected, data.impliedBy.world, "World",
-        data.reason and data.reason.world)
+        data.reason and data.reason.world, data.neededBy)
     local text = data.title
     if data.instance == "suggested" or data.world == "suggested" then text = GOLD .. text .. CLOSE end
     if data.title ~= data.name then text = text .. "  " .. GREY .. data.name .. CLOSE end
-    if data.protected then text = text .. "  " .. GREY .. "(protected)" .. CLOSE end
+    if data.neededBy then
+        text = text .. "  " .. GREY .. "(needed by " .. data.neededBy .. ")" .. CLOSE
+    elseif data.protected then
+        text = text .. "  " .. GREY .. "(protected)" .. CLOSE
+    end
     if data.notInstalled then text = text .. "  " .. GREY .. "(not installed on this character)" .. CLOSE end
     row.label:ClearAllPoints()
     row.label:SetPoint("LEFT", COLUMN_NAME + data.depth * INDENT, 0)

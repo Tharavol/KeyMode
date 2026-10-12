@@ -21,8 +21,8 @@ return function(stub, T)
             add(fixtures, "DBM-Raids-Midnight", { deps = { "DBM-Core" }, loadOnDemand = true })
             add(fixtures, "Details")
             add(fixtures, "TomTom")
-            add(fixtures, "BugGrabber")
-            add(fixtures, "BugSack", { deps = { "BugGrabber" } })
+            add(fixtures, "!BugGrabber")
+            add(fixtures, "BugSack", { deps = { "!BugGrabber" } })
             add(fixtures, "OffHere", { enabled = false })
             add(fixtures, "AltOnly", { enabledFor = { [OTHER] = true } })
             if configure then configure(env, fixtures) end
@@ -79,17 +79,31 @@ return function(stub, T)
     -- Schema (#11)
     --------------------------------------------------------------------------
 
-    T.Test("a v0.2.0 DB migrates to version 2: profiles dropped, lists added, rest kept", function()
+    T.Test("a v0.2.0 DB migrates to the current version: profiles dropped, lists added, rest kept", function()
         local env = stub.Load(function(e)
             e.KeyModeDB = { dbVersion = 1, profiles = {}, protected = { BugSack = false },
                 settings = { debug = true } }
         end)
         stub.Fire(env, "ADDON_LOADED", "KeyMode")
-        T.AssertEqual(env.KeyModeDB.dbVersion, 2, "version")
+        T.AssertEqual(env.KeyModeDB.dbVersion, 3, "version")
         T.AssertEqual(env.KeyModeDB.profiles, nil, "profiles dropped")
         T.AssertEqual(type(env.KeyModeDB.lists.instance), "table", "lists")
         T.AssertEqual(env.KeyModeDB.protected.BugSack, false, "protect list kept")
         T.AssertEqual(env.KeyModeDB.settings.debug, true, "settings kept")
+    end)
+
+    T.Test("the v0.3.0 BugGrabber protect entry moves to the real folder name, !BugGrabber", function()
+        local env = stub.Load(function(e)
+            e.KeyModeDB = { dbVersion = 2, protected = { BugGrabber = true, BugSack = true } }
+        end)
+        stub.Fire(env, "ADDON_LOADED", "KeyMode")
+        T.AssertEqual(env.KeyModeDB.protected.BugGrabber, nil, "old name gone")
+        T.AssertEqual(env.KeyModeDB.protected["!BugGrabber"], true, "new name protected")
+        local removed = stub.Load(function(e)
+            e.KeyModeDB = { dbVersion = 2, protected = { BugGrabber = false, BugSack = true } }
+        end)
+        stub.Fire(removed, "ADDON_LOADED", "KeyMode")
+        T.AssertEqual(removed.KeyModeDB.protected["!BugGrabber"], false, "a removed default stays removed")
     end)
 
     T.Test("a DB from a newer version is not downgraded", function()
@@ -315,7 +329,7 @@ return function(stub, T)
         stub.Slash(env, "/km protect add Details")
         stub.Slash(env, "/km protect remove BugSack")
         stub.Slash(env, "/km protect")
-        T.AssertTrue(Has(stub.TakeChat(env), "Protected: BugGrabber, Details, KeyMode"), "listed")
+        T.AssertTrue(Has(stub.TakeChat(env), "Protected: !BugGrabber, Details, KeyMode"), "listed")
     end)
 
     T.Test("the preview dialog: title, sections, Cancel changes nothing, Escape closes it", function()
