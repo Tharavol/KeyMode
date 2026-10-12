@@ -1,6 +1,6 @@
 ## Interface: 120100
 ## Title: KeyMode
-## Notes: Switches to a lean, saved set of addons before Mythic+ and restores your full setup afterwards, with one click and one reload
+## Notes: Switches to a lean set of addons for Mythic+ and raids, and back to your full setup afterwards, with one command and one reload
 ## Author: Tharavol, Claude
 ## Version: @project-version@
 ## IconTexture: Interface\Icons\INV_Relics_Hourglass

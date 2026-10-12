@@ -134,7 +134,7 @@ function Probe:Set(enable, label)
 end
 
 -- One pass over every installed addon for the facts the inventory and dependency graph
--- (#7, #8) and the suggested profile (#21) build on, plus whether each API the guard
+-- (#7, #8) and the suggested lists (#21) build on, plus whether each API the guard
 -- (#10) needs exists on this client.
 function Probe:Scan()
     local folders = {}

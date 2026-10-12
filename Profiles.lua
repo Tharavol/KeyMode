@@ -14,7 +14,7 @@ ns.Profiles = Profiles
 --------------------------------------------------------------------------
 -- Protect list (#9)
 --
--- A protected addon is skipped by every profile: no switch plan may disable it. KeyMode
+-- A protected addon is skipped by both lists: no switch plan may disable it. KeyMode
 -- itself is protected here in code, whatever the saved data says, because disabling it
 -- would leave no way back. Everything else lives in ns.db.protected as
 -- name -> true | false, where false records a default the player removed (see the

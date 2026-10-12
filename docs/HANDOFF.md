@@ -3,26 +3,39 @@
 ## Project summary
 
 KeyMode is a World of Warcraft addon for Retail / Midnight that switches the current
-character to a saved, lean set of addons before Mythic+ and restores the previous set
-afterwards. A switch is: snapshot this character's enable state, disable the profile's
-addons (plus anything that depends on them), save, `ReloadUI()`. Leaving restores the
-snapshot.
+character between two fixed addon sets (#37): **Instance** mode for Mythic Keystone
+dungeons and raids, **World** mode the rest of the time. Each mode is the character's
+baseline (its own enable state, snapshotted at the first switch) minus that mode's list
+and every addon requiring something on it. A switch is: plan, apply by GUID,
+`SaveAddOns()`, `ReloadUI()`. **Off** restores the baseline exactly and ends
+management.
 
 ## Current state
 
-- v0.1.0 released as a pre-release. v0.2.0 (#6-#10) is complete on
-  `milestone/v0.2.0`, awaiting its in-game check and release. Next: v0.3.0, which #37
-  reshapes (Instance and World lists instead of named profiles). Files, in TOC load
+- v0.1.0 and v0.2.0 released as pre-releases. v0.3.0 (#11-#16, #37) is complete on
+  `milestone/v0.3.0`, awaiting its in-game check and release. Files, in TOC load
   order:
   - `Core.lua` -- namespace, `ns.Print`, `ns.Debug`, `ns.GetAddonVersion`, SavedVariables
-    defaults, `ns.ResetSettings`, the `ADDON_LOADED` handler.
+    defaults (schema v2: `lists`, `snapshots`, `protected`, `settings`), `ns.Migrate`
+    (runs before defaults; 1 -> 2 drops `profiles`), `ns.ResetSettings`, the
+    `ADDON_LOADED` handler.
   - `Inventory.lua` -- `Inventory:Scan()` / `:Read()` (#7, enable state by GUID), the
     pure dependency graph `BuildGraph` / `Dependents` / `Requirements` (#8), and the
     safe-to-switch guard `Inventory:CanSwitch()` (#10).
   - `Profiles.lua` -- the protect list (#9): `IsProtected`, `ProtectedList`, `Protect`,
-    `Unprotect`. KeyMode is protected in code; removals are saved as `false`.
+    `Unprotect`. KeyMode is protected in code; removals are saved as `false`. The
+    Instance and World lists (#11): `ListNames`, `InList`, `ListAdd`, `ListRemove`,
+    `Lists`; removals delete the key. The file keeps its v0.1.0 name.
+  - `Plan.lua` -- `Plan.Build(input)` (#13), pure: (records, graph, baseline, mode,
+    lists, isProtected) -> `{ target, disable, enable, kept, removed, unknown }`.
+    Protected addons and everything they require are kept, and the cascade is taken
+    from the listed addons that actually go off.
+  - `Switch.lua` -- the only caller of `EnableAddOn`/`DisableAddOn` outside the probe.
+    `Snapshot`, `Mode`, `ModeLabel`, `TakeBaseline` (#12), `Preview`, `Apply` (#14),
+    `Reconcile` and the `PLAYER_LOGIN` handler: the login check (#14) and the Instance
+    mode reminder (#15). `KeyModeDB.switched[guid]` carries "a switch just happened"
+    across the reload for the confirmation line.
   - `Triggers.lua` -- module table only (v0.5.0).
-  - `Switch.lua` -- `Switch:IsActive()`, always false until v0.3.0.
   - `UI.lua` -- Addon Compartment handlers (globals named in the TOC) and the minimap
     button (#34); both route through `UI:OnEntryClick` / `UI:ShowEntryTooltip`.
   - `Options.lua` -- Settings canvas panel; `Options.CHECKBOXES` drives the General
@@ -145,9 +158,11 @@ against LibDBIcon's table as data.
 ## Design rules
 
 - **Never switch without a click.** Triggers only ever open the preview dialog.
-- **Restore is exact.** Exit restores the snapshot, not "everything the profile turned
-  off". Anything the player changed by hand while in M+ mode is overwritten on restore;
-  the preview dialog says so.
+- **Restore is exact.** Off restores the baseline, not "everything the lists turned
+  off". The one deliberate exception: the login check (#14) treats a difference on an
+  addon the mode would have left alone as a hand change and folds it into the baseline,
+  so Off keeps it. A difference on an addon the mode turns off is reported, never
+  folded.
 - **One guard.** Every switch path calls the same safe-to-switch check (combat, active
   keystone, encounter).
 - **Pure planning, thin applying.** Inventory, dependency graph and switch plan are pure

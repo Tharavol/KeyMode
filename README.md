@@ -1,15 +1,16 @@
 KeyMode
 =======
 
-World of Warcraft retail addon (12.x / Midnight) that switches a character to a lean,
-saved set of addons before Mythic+ and restores the full setup afterwards -- one click,
+World of Warcraft retail addon (12.x / Midnight) that switches a character to a lean
+set of addons for Mythic+ dungeons and raids, and back again afterwards -- one command,
 one `/reload`.
 
 > **Status: pre-release.** Development is tracked in milestones v0.1.0 through v1.0.0;
 > see [docs/PLAN.md](docs/PLAN.md). v0.1.0: the options panel, the commands, the
 > minimap button and the Addon Compartment entry. v0.2.0: the addon inventory,
 > dependency graph, protect list and safe-to-switch guard, with the enable-state API
-> verified in-game. Switching itself arrives with v0.3.0.
+> verified in-game. v0.3.0: Instance and World modes and the switch engine, from the
+> command line. The preview dialog and list editor arrive with v0.4.0.
 
 Why
 ---
@@ -21,17 +22,21 @@ before, is tedious and error-prone. KeyMode does both halves.
 
 Features (planned for 1.0)
 --------------------------
-- **Snapshot and restore.** Entering M+ mode records this character's exact enable
-  state first, so leaving it restores precisely that -- not a fixed list.
-- **Profiles.** Account-wide named profiles listing which addons to turn off. The same
-  profile works on every character.
+- **Two modes, two lists.** The Instance list names what to turn off in Mythic
+  Keystone dungeons and raids; the optional World list names what to turn off the rest
+  of the time (empty by default). Both are account-wide, so they work on every
+  character. Nothing to create or name.
+- **Snapshot and restore.** The first switch records this character's exact enable
+  state as its baseline. Each mode is worked out from that baseline, and Off restores
+  precisely it -- not a fixed list. Addons turned on or off by hand in the game's AddOn
+  list while in a mode are kept on Off.
 - **Dependency aware.** Turning off a library-style addon also turns off everything that
   requires it (DataStore takes Altoholic with it); turning an addon back on brings its
   required dependencies with it. No "missing dependency" errors after a switch.
 - **Preview before reload.** A dialog lists what will be turned off and on, and the
   reload happens only on confirmation.
-- **Prompt on arrival.** Optionally offers to switch on entering a Mythic+ dungeon or
-  joining a keystone group, and to switch back on leaving. Never prompts in combat or
+- **Prompt on arrival.** Optionally offers to switch on entering a Mythic dungeon or a
+  raid, or joining a keystone group, and to switch back on leaving. Never prompts in combat or
   during an active keystone, and never switches without a click.
 - **Entry points.** `/keymode` (alias `/km`), a minimap button, an Addon Compartment
   entry, and a key binding.
@@ -48,13 +53,16 @@ Commands
 Tharavol addons.
 
 - `/km` - open the options panel (also: `options`, `config`, `gui`)
-- `/km on [profile]` - switch to M+ mode, showing the preview first *(v0.3.0)*
-- `/km off` - restore the addons this character had before *(v0.3.0)*
-- `/km toggle` - switch to whichever mode is not active *(v0.3.0)*
-- `/km preview [profile]` - list what a switch would change, without reloading *(v0.3.0)*
-- `/km status` - show the current mode and settings
+- `/km instance` - turn off the Instance list and reload
+- `/km world` - turn off the World list and reload
+- `/km off` - restore this character's own setup and stop managing it
+- `/km toggle` - switch between Instance and World mode (from Off: Instance)
+- `/km preview [instance|world|off]` - list what a switch would change, without reloading
+- `/km list [instance|world] [add|remove <addon>]` - show or edit a list
+- `/km protect [add|remove <addon>]` - show or edit the addons no switch turns off
+- `/km status` - show the current mode, list sizes and settings
 - `/km version` - show the addon version
-- `/km reset` - restore settings to defaults; profiles, the protect list and pending restores are kept
+- `/km reset` - restore settings to defaults; the lists, the protect list and the mode are kept
 - `/km minimap [on|off]` - toggle or set the minimap button
 - `/km debug [on|off]` - toggle or set debug messages
 - `/km help` - list every command

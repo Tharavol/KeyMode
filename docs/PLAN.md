@@ -9,8 +9,8 @@ build on the switch engine, so it lands and is verified before any UI goes on to
 | --- | --- | --- |
 | v0.1.0 | Scaffolding and command surface | Addon loads clean, `/km help` works, CI green |
 | v0.2.0 | Addon inventory and live API verification | Every C_AddOns assumption confirmed in-game and written down |
-| v0.3.0 | Profiles and the switch engine | Enter/exit M+ mode from the command line, restore is exact |
-| v0.4.0 | Preview dialog and profile editor | No profile editing or switching needs a slash command |
+| v0.3.0 | Instance and World lists, switch engine | Instance, World and Off from the command line, restore is exact |
+| v0.4.0 | Preview dialog and list editor | No list editing or switching needs a slash command |
 | v0.5.0 | Triggers and entry points | Arrival and departure prompts, key binding |
 | v1.0.0 | Polish pass and stable release | QA matrix passed, docs final, v1.0.0 tagged and released |
 
@@ -55,58 +55,60 @@ build on the switch engine, so it lands and is verified before any UI goes on to
   why": combat lockdown, an active keystone (`C_ChallengeMode.IsChallengeModeActive`),
   an encounter in progress. Every entry point goes through it.
 
-## v0.3.0 -- Profiles and the switch engine
+## v0.3.0 -- Instance and World lists, and the switch engine
 
-> **Superseded in part by #37.** Named profiles are replaced by two fixed lists,
-> Instance (Mythic Keystone dungeons and raids) and World (the rest of the time,
-> empty by default), both applied over the character's baseline snapshot. The
-> bullets below and in v0.4.0-v0.5.0 that mention named profiles are rewritten
-> when #37 is scheduled; #37 lists every affected issue.
+Named profiles were replaced by two fixed lists before this milestone started (#37).
+The milestone and issue titles keep their original names.
 
-- **Two fixed addon sets: Instance and World (#37).** Baseline snapshot; Instance mode
-  = baseline - Instance list (World-list addons come back on); World mode = baseline -
-  World list; off = baseline restored exactly.
+- **Two fixed addon sets: Instance and World (#37).** Instance mode (Mythic Keystone
+  dungeons and raids) = baseline - Instance list - cascade, with World-list addons back
+  on; World mode = baseline - World list - cascade (empty World list: the baseline);
+  Off = baseline restored exactly.
+- **SavedVariables schema v2 (#11).** `lists = { instance, world }`, `snapshots[guid] =
+  { taken, mode, state }`; migrations keyed on `dbVersion` run before defaults, and
+  1 -> 2 drops the always-empty `profiles`.
+- **Snapshot (#12).** The first switch records every installed addon's enable state for
+  this character as its baseline. It is never overwritten while pending restore.
+- **Switch plan (#13).** Pure function: (inventory, baseline, mode, lists, protect list)
+  -> addons to turn off (listed or cascade) and on. Protected addons and everything they
+  require stay on. Tested against DataStore/Altoholic, Details plugins, DBM modules and
+  the cascades found in-game in v0.2.0.
+- **Enter and exit (#14).** Apply by GUID, save, reload. Off restores the baseline and
+  deletes the snapshot; addons installed since are left as they are, addons removed
+  since are reported. A login check folds hand changes into the baseline and reports
+  listed addons that are on anyway.
+- **Recovery (#15).** Mode and baseline live in SavedVariables. Logging in in Instance
+  mode outside an instance and a group prints the way back.
+- **Commands (#16).** `instance`, `world`, `off`, `toggle`, `preview [instance|world|off]`,
+  `list [instance|world] [add|remove <addon>]`, `protect [add|remove <addon>]`, `status`.
 
-- **SavedVariables schema v1.** `KeyModeDB.profiles[name] = { disable = {...} }`,
-  `activeProfile`, `snapshots[guid] = { taken, profile, state = {...} }`, a migration
-  hook keyed on `dbVersion`.
-- **Snapshot.** Before any switch, record every installed addon's enable state for this
-  character. A snapshot is never overwritten while one is pending restore.
-- **Switch plan.** Pure function: (inventory, profile, protect list) -> list of addons
-  to disable, including dependents that would otherwise fail to load. Tested against
-  real-world shapes (DataStore/Altoholic, Details plugins, DBM modules).
-- **Enter and exit.** Apply the plan, save, reload. Exit restores the snapshot exactly,
-  enabling required dependencies first; addons installed since the snapshot are left as
-  they are, addons removed since are skipped and reported.
-- **Recovery.** The mode flag and snapshot survive logout and crashes. Logging in while
-  still in M+ mode and not in a group prints a one-line reminder with the exit command.
-- **Commands.** `on [profile]`, `off`, `toggle`, `preview [profile]` (text diff in chat),
-  `status`, `profile list|create|delete|add|remove`.
+## v0.4.0 -- Preview dialog and list editor
 
-## v0.4.0 -- Preview dialog and profile editor
-
-- **Preview dialog.** "Will turn off" / "Will turn on" lists with counts and
-  dependency-cascade entries marked; Confirm and Reload / Cancel. Every switch path uses it.
-- **Profile editor.** In options: searchable addon list with checkboxes, dependents
-  nested under their parent, check/uncheck a whole group, protected addons shown locked.
-- **Profile management.** Create, rename, copy, delete, choose the default profile.
-- **Import and export.** A profile as a copyable string, for backup and for moving
-  between accounts.
-- **Suggested profile.** A one-time "suggest a starting profile" action grouping addons
-  by heuristics (TOC `## Category` metadata if present -- verify the field on 12.x --
-  plus known patterns: `DBM-Raids-*`, non-local `RaiderIO_DB_*`, profession and AH
-  tools). Shows the suggestion in the editor; never applies it on its own.
+- **Preview dialog (#17).** "Will turn off" / "Will turn on" lists with counts and
+  cascade entries marked; the title names the target mode. Confirm and Reload / Cancel.
+  Every switch path uses it.
+- **List editor (#18).** In options: Instance and World side by side, a searchable addon
+  list with a checkbox per list, dependents nested under their parent, check/uncheck a
+  whole group, protected addons shown locked.
+- **List management (#19).** Clear a list; copy one list into the other.
+- **Import and export (#20).** Both lists (optionally the protect list) as one copyable
+  string; import shows what would change first.
+- **Suggested lists (#21).** A one-time action filling both lists by heuristics (TOC
+  `## Category` metadata, verified on 12.x, plus known patterns such as `DBM-Raids-*`,
+  non-local `RaiderIO_DB_*`, profession and AH tools). Shown in the editor; never
+  applied on its own.
 
 ## v0.5.0 -- Triggers and entry points
 
-- **Arrival prompt.** On entering a Mythic or Mythic Keystone dungeon (instance
-  difficulty 23 / 8) outside M+ mode, offer the switch through the preview dialog.
-- **Group prompt.** On joining a premade group whose listing is a Mythic+ activity, or
-  listing one's own key, offer the switch.
-- **Departure prompt.** In M+ mode, after `CHALLENGE_MODE_COMPLETED` and leaving the
-  instance, or on leaving the group, offer to restore.
-- **Prompt rules.** Never in combat or during an active key; "not now" snoozes for the
-  session; each trigger has its own toggle in options.
+- **Arrival prompt (#22).** On entering a raid (any difficulty) or a Mythic dungeon
+  (difficulty 23) outside Instance mode, offer the switch through the preview dialog.
+  Normal and Heroic dungeons do not trigger it.
+- **Group prompt (#23).** On joining a premade group listed as a Mythic+ or raid
+  activity, or listing one's own key or raid, offer Instance mode.
+- **Departure prompt (#24).** In Instance mode, after `CHALLENGE_MODE_COMPLETED` and
+  leaving the instance, after leaving a raid, or on leaving the group, offer World mode.
+- **Prompt rules (#25).** Never in combat or during an active key; "not now" snoozes for
+  the session; each trigger has its own toggle in options.
 - **Key binding.** `Bindings.xml` toggle binding. (The minimap button moved to v0.1.0.)
 
 ## v1.0.0 -- Polish pass and stable release
