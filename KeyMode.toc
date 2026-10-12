@@ -20,5 +20,6 @@ Switch.lua
 Triggers.lua
 UI.lua
 Options.lua
+Editor.lua
 Probe.lua
 Commands.lua

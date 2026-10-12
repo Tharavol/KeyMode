@@ -34,6 +34,9 @@ read_globals = {
     -- Frame / UI globals
     "CreateFrame", "DEFAULT_CHAT_FRAME", "GameTooltip", "Settings", "UIParent",
     "Minimap", "GetCursorPosition",
+    -- List editor (#18): scroll list API and the generic confirmation popup
+    "CreateScrollBoxListLinearView", "ScrollUtil", "CreateDataProvider",
+    "StaticPopup_ShowGenericConfirmation",
     -- Defined by minimap-reshaping addons, not the base client; always nil-checked
     "GetMinimapShape",
 

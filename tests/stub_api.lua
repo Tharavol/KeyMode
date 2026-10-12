@@ -33,6 +33,9 @@ WidgetMethods.__index = function(_, key)
     local method = WidgetMethods[key]
     if method ~= nil then return method end
     if TEMPLATE_FIELDS[key] then return nil end
+    -- A widget's own state (`_text`, `_shown`, ...) is unset until a method writes it; it
+    -- must read as nil, not as the catch-all method, or an unshown frame reads as shown.
+    if type(key) == "string" and key:sub(1, 1) == "_" then return nil end
     return NoOp
 end
 
@@ -69,6 +72,12 @@ function WidgetMethods:GetObjectType() return self.kind end
 function WidgetMethods:SetTexture(texture) self._texture = texture end
 function WidgetMethods:GetTexture() return self._texture end
 function WidgetMethods:GetParent() return self.parent end
+function WidgetMethods:SetDataProvider(provider) self._dataProvider = provider end
+function WidgetMethods:Enable() self._disabled = false end
+function WidgetMethods:Disable() self._disabled = true end
+function WidgetMethods:IsEnabled() return not self._disabled end
+function WidgetMethods:SetAlpha(alpha) self._alpha = alpha end
+function WidgetMethods:GetAlpha() return self._alpha or 1 end
 function WidgetMethods:Click(button)
     local onClick = self._scripts.OnClick
     if onClick then onClick(self, button or "LeftButton") end
@@ -377,7 +386,31 @@ function M.Load(configure, fixtures)
         end,
         RegisterAddOnCategory = function(category) fixtures.registeredCategory = category end,
         OpenToCategory = function(id) fixtures.settingsOpened[#fixtures.settingsOpened + 1] = id end,
+        RegisterCanvasLayoutSubcategory = function(parent, panel, name)
+            local category = { panel = panel, name = name, parent = parent, id = name .. "-subcategory" }
+            function category:GetID() return self.id end
+            fixtures.subcategories = fixtures.subcategories or {}
+            fixtures.subcategories[name] = category
+            return category
+        end,
     }
+    -- The scroll list API the list editor uses (#18). The view keeps its row initializer
+    -- so a test can draw a row by hand; the data provider is just the row list.
+    env.CreateScrollBoxListLinearView = function()
+        local view = {}
+        function view:SetElementExtent(extent) self.extent = extent end
+        function view:SetElementInitializer(kind, init) self.kind, self.init = kind, init end
+        return view
+    end
+    env.ScrollUtil = {
+        InitScrollBoxListWithScrollBar = function(box, bar, view) box._view, box._bar = view, bar end,
+    }
+    env.CreateDataProvider = function(rows) return { rows = rows } end
+    env.StaticPopup_ShowGenericConfirmation = function(text, callback)
+        fixtures.confirmations = fixtures.confirmations or {}
+        fixtures.confirmations[#fixtures.confirmations + 1] = text
+        if fixtures.autoConfirm ~= false then callback() end
+    end
 
     if configure then configure(env, fixtures) end
     if fixtures.minimapShape then

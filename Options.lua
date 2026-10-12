@@ -89,6 +89,14 @@ local function CreatePanel()
     end)
     panel.resetButton = reset
 
+    -- The lists live on their own subpage (#18); this is the way there from the main page.
+    local lists = CreateFrameWithFallback("Button", panel, { "UIPanelButtonTemplate" })
+    lists:SetPoint("LEFT", reset, "RIGHT", 8, 0)
+    lists:SetSize(160, 22)
+    lists:SetText("Edit Lists...")
+    lists:SetScript("OnClick", function() ns.Editor:Open() end)
+    panel.listsButton = lists
+
     panel:SetScript("OnShow", function() Options:Refresh() end)
     return panel
 end

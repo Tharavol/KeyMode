@@ -103,9 +103,20 @@ local function ListCommand(argument)
     elseif verb == "remove" then
         local ok, err = ns.Profiles:ListRemove(which, name)
         Report(ok, err, name .. " removed from the " .. label .. ".", name)
+    elseif verb == "clear" then
+        ns.Print(ns.Editor:Clear(which) .. " removed from the " .. label .. ".")
+    elseif verb == "copy" then
+        local from = name:lower()
+        if not ns.Profiles:IsList(from) or from == which then
+            ns.Print("'" .. name .. "' - expected the other list's name.")
+            return
+        end
+        ns.Print(ns.Editor:Copy(from, which) .. " added to the " .. label .. " from the "
+            .. ns.Switch.MODES[from] .. " list.")
     else
-        ns.Print("'" .. verb .. "' - expected 'add' or 'remove'.")
+        ns.Print("'" .. verb .. "' - expected 'add', 'remove', 'clear' or 'copy'.")
     end
+    if ns.Editor.page and ns.Editor.page:IsShown() then ns.Editor:Refresh() end
 end
 
 -- `/km protect [add|remove <addon>]`.
@@ -183,7 +194,7 @@ local COMMANDS = {
     },
     {
         name = "list",
-        help = { Cmd("/km list [instance|world] [add|remove <addon>]") .. " - show or edit a list" },
+        help = { Cmd("/km list [instance|world] [add|remove <addon>|clear|copy <other>]") .. " - show or edit a list" },
         handler = function(argument) ListCommand(argument) end,
     },
     {
