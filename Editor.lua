@@ -342,16 +342,6 @@ local function CreatePage()
     suggest:SetPoint("RIGHT", import, "LEFT", -8, 0)
     page.suggestButton = suggest
 
-    -- Shown while a suggestion is pending: what it holds, and Accept / Discard.
-    local discard = Button(page, "Discard", 80, function() Editor:EndSuggestion(false) end)
-    discard:SetPoint("TOPRIGHT", export, "BOTTOMRIGHT", 0, -6)
-    local accept = Button(page, "Accept", 80, function() Editor:EndSuggestion(true) end)
-    accept:SetPoint("RIGHT", discard, "LEFT", -8, 0)
-    local summary = page:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
-    summary:SetPoint("RIGHT", accept, "LEFT", -8, 0)
-    page.pendingBar = { accept = accept, discard = discard, summary = summary }
-    for _, widget in pairs(page.pendingBar) do widget:Hide() end
-
     local header = CreateFrame("Frame", nil, page)
     header:SetHeight(16)
     header:SetPoint("TOPLEFT", search, "BOTTOMLEFT", -6, -10)
@@ -362,6 +352,19 @@ local function CreatePage()
         label:SetPoint("LEFT", column[1], 0)
         label:SetText(column[2])
     end
+
+    -- Shown while a suggestion is pending: what it holds, and Accept / Discard. It sits at
+    -- the right of the search row, which is otherwise empty; just under the top buttons it
+    -- overlapped the help text's second line. The header is 10 below the search box and 16
+    -- high, so +28 from its middle is the search box's middle.
+    local discard = Button(page, "Discard", 80, function() Editor:EndSuggestion(false) end)
+    discard:SetPoint("RIGHT", header, "RIGHT", 0, 28)
+    local accept = Button(page, "Accept", 80, function() Editor:EndSuggestion(true) end)
+    accept:SetPoint("RIGHT", discard, "LEFT", -8, 0)
+    local summary = page:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
+    summary:SetPoint("RIGHT", accept, "LEFT", -8, 0)
+    page.pendingBar = { accept = accept, discard = discard, summary = summary }
+    for _, widget in pairs(page.pendingBar) do widget:Hide() end
 
     -- Bottom bar: list management (#19).
     local clearInstance = Button(page, "Clear Instance", 120, function()
