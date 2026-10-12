@@ -198,6 +198,16 @@ local COMMANDS = {
         handler = function(argument) ListCommand(argument) end,
     },
     {
+        name = "export",
+        help = { Cmd("/km export") .. " - copy both lists as text, for backup or another account" },
+        handler = function() ns.Editor:ShowExport() end,
+    },
+    {
+        name = "import",
+        help = { Cmd("/km import") .. " - paste exported lists; shows the changes before applying" },
+        handler = function() ns.Editor:ShowImport() end,
+    },
+    {
         name = "protect",
         help = { Cmd("/km protect [add|remove <addon>]") .. " - show or edit the addons no switch turns off" },
         handler = function(argument) ProtectCommand(argument) end,

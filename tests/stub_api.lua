@@ -26,7 +26,7 @@ local function NoOp() end
 
 -- Child-region fields a template creates (`checkbox.Text`). Without the template they
 -- don't exist on the live client either, so the catch-all must not invent them.
-local TEMPLATE_FIELDS = { Text = true, TitleText = true, CloseButton = true }
+local TEMPLATE_FIELDS = { Text = true, TitleText = true, CloseButton = true, EditBox = true }
 
 local WidgetMethods = {}
 WidgetMethods.__index = function(_, key)
@@ -101,6 +101,9 @@ local function MakeWidget(env, kind, name, parent, template)
     -- Templates that carry a label expose it as `.Text` on the live client.
     if template == "UICheckButtonTemplate" then
         w.Text = MakeWidget(env, "FontString", nil, w)
+    end
+    if template == "InputScrollFrameTemplate" then
+        w.EditBox = MakeWidget(env, "EditBox", nil, w)
     end
     if template == "BasicFrameTemplateWithInset" then
         w.TitleText = MakeWidget(env, "FontString", nil, w)
