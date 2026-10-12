@@ -2,7 +2,8 @@
 -- SPDX-License-Identifier: GPL-3.0-or-later
 --
 -- Player-facing entry points and dialogs: the Addon Compartment entry (#4), the minimap
--- button (#34) and the preview dialog (#17); later the key binding.
+-- button (#34), the preview dialog (#17), which also carries the switch prompts (#25),
+-- and the key binding (#26).
 
 local ADDON_NAME, ns = ...
 
@@ -50,6 +51,21 @@ end
 
 function KeyMode_OnAddonCompartmentLeave()
     GameTooltip:Hide()
+end
+
+--------------------------------------------------------------------------
+-- Key binding (#26)
+--
+-- Bindings.xml runs `KeyMode_Toggle()` by name, so it is a global like the compartment
+-- callbacks above. The Key Bindings page reads the header and binding names from these
+-- globals.
+--------------------------------------------------------------------------
+
+BINDING_HEADER_KEYMODE = ADDON_NAME
+BINDING_NAME_KEYMODE_TOGGLE = "Switch mode (Instance / World)"
+
+function KeyMode_Toggle()
+    UI:Preview(ns.Switch:ToggleTarget())
 end
 
 --------------------------------------------------------------------------
@@ -289,6 +305,7 @@ local function CreateDialog()
     end
     dialog.title = title
 
+    -- The intro wraps (a prompt adds why it opened), so the list starts below it.
     local intro = dialog:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
     intro:SetPoint("TOPLEFT", 16, -34)
     intro:SetPoint("RIGHT", dialog, "RIGHT", -16, 0)
@@ -296,7 +313,7 @@ local function CreateDialog()
     dialog.intro = intro
 
     local scroll = ns.CreateFrameWithFallback("ScrollFrame", dialog, { "UIPanelScrollFrameTemplate" })
-    scroll:SetPoint("TOPLEFT", 16, -60)
+    scroll:SetPoint("TOPLEFT", intro, "BOTTOMLEFT", 0, -10)
     scroll:SetPoint("BOTTOMRIGHT", -34, 48)
     local content = CreateFrame("Frame", nil, scroll)
     content:SetSize(DIALOG_WIDTH - 56, 1)
@@ -319,7 +336,23 @@ local function CreateDialog()
     cancel:SetSize(100, 24)
     cancel:SetPoint("RIGHT", confirm, "LEFT", -8, 0)
     cancel:SetText("Cancel")
-    cancel:SetScript("OnClick", function() dialog:Hide() end)
+    -- On a prompt this reads "Not now" and snoozes that prompt until the next reload (#25).
+    -- rawget: `prompt` is nil for a dialog opened by hand, and must read as nil.
+    cancel:SetScript("OnClick", function()
+        local prompt = rawget(dialog, "prompt")
+        if prompt then ns.Triggers:Snooze(prompt.trigger) end
+        dialog:Hide()
+    end)
+    cancel:SetScript("OnEnter", function(self)
+        local prompt = rawget(dialog, "prompt")
+        if not prompt then return end
+        GameTooltip:SetOwner(self, "ANCHOR_TOP")
+        GameTooltip:AddLine("Not now")
+        GameTooltip:AddLine("No more " .. ns.Triggers.LABELS[prompt.trigger]:lower()
+            .. "s until the next reload. Options turn each prompt off for good.", 1, 1, 1, true)
+        GameTooltip:Show()
+    end)
+    cancel:SetScript("OnLeave", function() GameTooltip:Hide() end)
     dialog.cancelButton = cancel
 
     -- Escape closes it, like every other Blizzard dialog.
@@ -337,8 +370,10 @@ local INTRO = {
 
 -- Opens the dialog for a switch to `mode`, or says why not. A switch with nothing to
 -- change is applied straight away (it records the mode and needs no reload), since a
--- dialog listing nothing would only ask the player to confirm a no-op.
-function UI:Preview(mode)
+-- dialog listing nothing would only ask the player to confirm a no-op. `prompt`, from
+-- Triggers:Offer, is { trigger, reason }: the reason leads the intro and Cancel becomes
+-- Not now.
+function UI:Preview(mode, prompt)
     local ok, reason = ns.Switch:Check(mode)
     if not ok then
         ns.Print(reason)
@@ -353,8 +388,10 @@ function UI:Preview(mode)
     local dialog = self.dialog or CreateDialog()
     self.dialog = dialog
     dialog.mode = mode
+    dialog.prompt = prompt
     dialog.title:SetText("Switch to " .. ns.Switch.MODES[mode] .. " mode")
-    dialog.intro:SetText(INTRO[mode])
+    dialog.intro:SetText(prompt and (prompt.reason .. " " .. INTRO[mode]) or INTRO[mode])
+    dialog.cancelButton:SetText(prompt and "Not now" or "Cancel")
     dialog.body:SetText(UI.PreviewText(plan))
     dialog.content:SetHeight((dialog.body:GetStringHeight() or 0) + 8)
     dialog:Show()

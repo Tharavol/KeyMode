@@ -152,6 +152,41 @@ local function Toggle(key, value, label)
     ns.Print(label .. " is " .. OnOff(ns.db.settings[key]) .. ".")
 end
 
+-- `/km prompts [arrival|group|departure] [on|off]` (#25). Bare lists all three; a name
+-- alone toggles that one (S8).
+local function PromptStates()
+    local parts = {}
+    for _, name in ipairs(ns.Triggers.PROMPTS) do
+        parts[#parts + 1] = name .. " " .. OnOff(ns.db.settings.prompts[name])
+    end
+    return "Prompts: " .. table.concat(parts, ", ")
+end
+
+local function PromptsCommand(rest)
+    local which, value = rest:match("^(%S*)%s*(.-)$")
+    local prompts = ns.db.settings.prompts
+    if which == "" then
+        ns.Print(PromptStates())
+        return
+    end
+    if not ns.Triggers.LABELS[which] then
+        ns.Print("'" .. which .. "' - expected 'arrival', 'group' or 'departure'.")
+        return
+    end
+    if value == "on" then
+        prompts[which] = true
+    elseif value == "off" then
+        prompts[which] = false
+    elseif value == "" then
+        prompts[which] = not prompts[which]
+    else
+        ns.Print("'" .. value .. "' - expected 'on' or 'off'.")
+        return
+    end
+    ns.SettingsChanged()
+    ns.Print(ns.Triggers.LABELS[which] .. " is " .. OnOff(prompts[which]) .. ".")
+end
+
 -- Forward-declared so the "help" entry can close over it before COMMANDS exists.
 local PrintUsage
 
@@ -213,6 +248,12 @@ local COMMANDS = {
         handler = function(argument) ProtectCommand(argument) end,
     },
     {
+        name = "prompts",
+        help = { Cmd("/km prompts [arrival|group|departure] [on|off]")
+            .. " - show, toggle or set the switch prompts" },
+        handler = function(_, rest) PromptsCommand(rest) end,
+    },
+    {
         name = "status",
         help = { Cmd("/km status") .. " - show the current mode and settings" },
         handler = function()
@@ -224,8 +265,11 @@ local COMMANDS = {
             local canSwitch, reason = ns.Inventory:CanSwitch()
             ns.Print("  Switch allowed: " .. (canSwitch and "yes" or ("no (" .. reason .. ")")))
             for _, definition in ipairs(ns.Options.CHECKBOXES) do
-                ns.Print("  " .. definition.label .. ": " .. OnOff(ns.db.settings[definition.key]))
+                if not definition.prompt then
+                    ns.Print("  " .. definition.label .. ": " .. OnOff(ns.db.settings[definition.key]))
+                end
             end
+            ns.Print("  " .. PromptStates())
         end,
     },
     {
@@ -250,13 +294,18 @@ local COMMANDS = {
         name = "debug",
         help = {
             Cmd("/km debug [on|off]") .. " - toggle or set debug messages",
-            Cmd("/km debug probe [scan|inventory|categories|enable|disable|save|reset|clear]")
+            Cmd("/km debug probe [scan|inventory|categories|lfg|enable|disable|save|reset|clear]")
                 .. " - addon API diagnostics (see docs/HANDOFF.md)",
+            Cmd("/km debug trigger <arrival|group|departure>") .. " - show a simulated switch prompt",
         },
         handler = function(argument, rest)
             local word, probeArgs = argument:match("^(%S+)%s*(.-)$")
             if word and word:lower() == "probe" then
                 ns.Probe:Run(probeArgs)
+                return
+            end
+            if word and word:lower() == "trigger" then
+                ns.Triggers:Simulate(probeArgs:lower())
                 return
             end
             Toggle("debug", rest, "Debug messages")

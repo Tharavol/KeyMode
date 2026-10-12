@@ -25,6 +25,10 @@ globals = {
 
     -- Blizzard's list of frames Escape closes; the preview dialog adds itself (#17)
     "UISpecialFrames",
+
+    -- Key binding (#26): Bindings.xml calls KeyMode_Toggle by name; the Key Bindings page
+    -- reads the header and binding names from these globals
+    "KeyMode_Toggle", "BINDING_HEADER_KEYMODE", "BINDING_NAME_KEYMODE_TOGGLE",
 }
 
 read_globals = {
@@ -46,6 +50,8 @@ read_globals = {
     "IsInInstance", "IsInGroup",
     -- Suggested lists (#21): the player's region picks the Raider.IO database to keep; nil-checked
     "GetCurrentRegion",
+    -- Switch prompts (#22, #23, #24); nil-checked, and the C_LFGList calls are pcall'd
+    "GetInstanceInfo", "C_LFGList",
 
     -- Safe-to-switch guard inputs (#10), also probed by `/km debug probe scan` (#6);
     -- each is nil-checked, IsEncounterInProgress unverified on 12.x

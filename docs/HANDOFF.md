@@ -12,13 +12,14 @@ management.
 
 ## Current state
 
-- v0.1.0 to v0.3.0 released as pre-releases. v0.4.0 (#17-#21) is complete on
-  `milestone/v0.4.0`, awaiting its in-game check and release. Files, in TOC load
-  order:
+- v0.1.0 to v0.4.0 released as pre-releases. v0.5.0 (#22-#26) is complete on
+  `milestone/v0.5.0`, awaiting its in-game check and release. Files, in TOC load
+  order (plus `Bindings.xml`, which the client loads from the folder by itself):
   - `Core.lua` -- namespace, `ns.Print`, `ns.Debug`, `ns.GetAddonVersion`, SavedVariables
-    defaults (schema v2: `lists`, `snapshots`, `protected`, `settings`), `ns.Migrate`
-    (runs before defaults; 1 -> 2 drops `profiles`), `ns.ResetSettings`, the
-    `ADDON_LOADED` handler.
+    defaults (schema v3: `lists`, `snapshots`, `protected`, `settings`, with
+    `settings.prompts`), `ns.Migrate` (runs before defaults; 1 -> 2 drops `profiles`,
+    2 -> 3 renames the `BugGrabber` protect entry to `!BugGrabber`), `ns.ResetSettings`,
+    the `ADDON_LOADED` handler, `ns.CreateFrameWithFallback`.
   - `Inventory.lua` -- `Inventory:Scan()` / `:Read()` (#7, enable state by GUID), the
     pure dependency graph `BuildGraph` / `Dependents` / `Requirements` (#8), and the
     safe-to-switch guard `Inventory:CanSwitch()` (#10).
@@ -40,20 +41,30 @@ management.
     `Reconcile` and the `PLAYER_LOGIN` handler: the login check (#14) and the Instance
     mode reminder (#15). `KeyModeDB.switched[guid]` carries "a switch just happened"
     across the reload for the confirmation line.
-  - `Triggers.lua` -- module table only (v0.5.0).
+  - `Triggers.lua` -- the switch prompts. Pure `Triggers.ArrivalReason` (#22) and
+    `Triggers.GroupActivity` (#23); `Triggers:Offer` applies the rules (#25: off,
+    snoozed, already in the mode, nothing to change, guard; combat defers to
+    `PLAYER_REGEN_ENABLED`) and opens `UI:Preview(mode, prompt)`. Zone, group, Group
+    Finder and key-completion events feed it, including the departure prompt (#24).
+    `Triggers:Simulate` backs `/km debug trigger`. Snoozes are Lua state, so they last
+    until the next reload.
   - `UI.lua` -- Addon Compartment handlers (globals named in the TOC) and the minimap
     button (#34); both route through `UI:OnEntryClick` / `UI:ShowEntryTooltip`. The
-    preview dialog (#17): `UI:Preview(mode)` (every switch path), `UI:ConfirmPreview`,
-    pure `UI.PreviewSections` / `PreviewText`. `Switch:Check` runs before it opens and
-    again on Confirm.
-  - `Options.lua` -- Settings canvas panel; `Options.CHECKBOXES` drives the General
-    section; `Options:Refresh()` re-reads every widget from `ns.db`.
+    preview dialog (#17): `UI:Preview(mode, prompt)` (every switch path; a prompt adds
+    its reason and turns Cancel into Not now), `UI:ConfirmPreview`, pure
+    `UI.PreviewSections` / `PreviewText`. `Switch:Check` runs before it opens and again on
+    Confirm. The key binding's global `KeyMode_Toggle` and its names (#26).
+  - `Options.lua` -- Settings canvas panel; `Options.CHECKBOXES` drives the General and
+    Prompts sections (`Options.GetSetting` / `SetSetting` reach `settings.prompts`);
+    `Options:Refresh()` re-reads every widget from `ns.db`.
   - `Editor.lua` -- the Lists subpage (#18): pure `Editor.Rows`, the scroll list
     (`WowScrollBoxList`), clear/copy (#19), the import/export dialog (#20) and pending
     suggestions with Accept/Discard (#21).
   - `Probe.lua` -- `/km debug probe`, the in-game enable-state checks for #6 (see
     "Enable-state probe procedure") and `probe inventory [addon]` for checking #7/#8
-    against the real install. Output is also kept in `KeyModeDB.probeLog`.
+    against the real install, `probe categories` (#21) and `probe lfg` (what the switch
+    prompts see: instance, difficulty, group, Group Finder activities). Output is also
+    kept in `KeyModeDB.probeLog`.
   - `Commands.lua` -- loads last; `/keymode`, `/km`; `Commands.COMMANDS` drives both
     dispatch and help.
 - Tests: `tests/stub_api.lua` loads every file `KeyMode.toc` lists, in TOC order, into
@@ -138,6 +149,26 @@ v0.4.0 UI was written. Source only: none of these has been tried in-game yet.
 | `UICheckButtonTemplate` | `Blizzard_SharedXML/Shared/Button/CheckButtonTemplates.xml` |
 | `UIPanelButtonTemplate` | `Blizzard_SharedXML/Mainline/SharedUIPanelTemplates.xml` |
 | `Settings.RegisterCanvasLayoutSubcategory(parentCategory, frame, name)` | `Blizzard_Settings_Shared/Blizzard_Settings.lua` |
+
+### Switch prompts for v0.5.0
+
+Checked against `Gethe/wow-ui-source` branch `live` (12.1.0) before the prompts were
+written. Source only until the v0.5.0 in-game check; `/km debug probe lfg` prints the
+values below in-game.
+
+| Fact | Where it is defined |
+| --- | --- |
+| `LFG_LIST_JOINED_GROUP(searchResultID, groupName)`, `LFG_LIST_ACTIVE_ENTRY_UPDATE(created)` (created is nilable) | `Blizzard_APIDocumentationGenerated/LFGListInfoDocumentation.lua` |
+| Search results and one's own listing carry `activityIDs`, a table (no single `activityID`) | same, `LfgSearchResultData`, `LfgEntryData` |
+| `GetActivityInfoTable(id)` answers `fullName`, `categoryID`, `difficultyID`, `isMythicPlusActivity`, `isCurrentRaidActivity` | same, `GroupFinderActivityInfo` |
+| `GetActiveEntryInfo` is `SecretInChatMessagingLockdown`; the activity lookups take `SecretArguments`. KeyMode pcalls each and reads a refusal as "no prompt" | same |
+| `GROUP_FINDER_CATEGORY_ID_DUNGEONS = 2`; Blizzard names no Raids constant. KeyMode uses 3, to be confirmed in-game | `Blizzard_GroupFinder/Mainline/LFGList.lua` |
+| `GROUP_JOINED(category, partyGUID)`, `GROUP_LEFT(category, partyGUID)`, per group category (home, instance) | `PartyInfoDocumentation.lua` |
+| `CHALLENGE_MODE_COMPLETED` (no payload) | `ChallengeModeInfoDocumentation.lua` |
+| Key Bindings sections are named by `_G[category]`, so `category="ADDONS"` shows under "AddOns"; `header` adds a spacer named by `BINDING_HEADER_<header>` | `Blizzard_SettingsDefinitions_Frame/Keybindings.lua` |
+
+Decided for v0.5.0: arrival prompts only in a group (solo legacy farming would prompt on
+every visit), and "Not now" lasts until the next reload or logout.
 
 ### Enable-state probe procedure (#6)
 

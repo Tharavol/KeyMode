@@ -2,6 +2,30 @@
 
 All notable changes to the KeyMode addon are documented in this file.
 
+## [0.5.0]
+
+Switch prompts and a key binding. A prompt is the preview dialog with a reason on top:
+nothing switches without Confirm and Reload.
+
+- Arrival prompt: entering a raid (any difficulty, LFR included) or a Mythic dungeon,
+  in a group, offers Instance mode once per visit. Normal and Heroic dungeons and solo
+  visits do not (#22).
+- Group prompt: joining a Mythic+ or raid group through the Group Finder, or listing
+  one, offers Instance mode (#23).
+- Departure prompt: in Instance mode, reaching the open world after a completed key or
+  out of a raid, or leaving the group, offers World mode. Walking out mid-key does not
+  (#24).
+- Prompt rules: never during an active key or a boss encounter, and deferred until
+  combat ends. "Not now" silences that prompt until the next reload. Each prompt has a
+  checkbox under Options > AddOns > KeyMode > Prompts and `/km prompts [arrival|group|
+  departure] [on|off]`. A prompt never covers an open dialog and never appears when the
+  switch would change nothing (#25).
+- Key binding: Key Bindings > AddOns > KeyMode > "Switch mode (Instance / World)" opens
+  the preview dialog, like the minimap button's left click (#26).
+- `/km debug trigger <arrival|group|departure>` shows a simulated prompt, and
+  `/km debug probe lfg` prints what the prompts see (instance, difficulty, group, Group
+  Finder activities).
+
 ## [0.4.0]
 
 Switching and list editing without slash commands.

@@ -99,6 +99,13 @@ ns.defaults = {
         debug = false,
         minimapButton = true,  -- shown by default (#34)
         minimapAngle = 225,    -- degrees counter-clockwise from the minimap's right edge
+        -- Which switch prompts may appear (#25); each is offered through the preview
+        -- dialog and never switches on its own.
+        prompts = {
+            arrival = true,   -- entering a raid or a Mythic dungeon, in a group (#22)
+            group = true,     -- joining or listing a Mythic+ or raid group (#23)
+            departure = true, -- leaving afterwards, in Instance mode (#24)
+        },
     },
 }
 

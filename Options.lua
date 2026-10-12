@@ -24,7 +24,43 @@ Options.CHECKBOXES = {
         label = "Show minimap button",
         tooltip = "Show KeyMode's button on the minimap edge. Drag it to move it. Same as /km minimap.",
     },
+    -- Switch prompts (#25), stored under settings.prompts. Each only opens the preview
+    -- dialog; "Not now" there snoozes one until the next reload, these turn it off.
+    {
+        prompt = "arrival",
+        heading = "Prompts",
+        label = "Offer Instance mode on entering a raid or a Mythic dungeon",
+        tooltip = "In a group, on arrival at any raid (LFR included) or a Mythic dungeon. "
+            .. "Same as /km prompts arrival.",
+    },
+    {
+        prompt = "group",
+        label = "Offer Instance mode on joining or listing a Mythic+ or raid group",
+        tooltip = "Through the Group Finder. Same as /km prompts group.",
+    },
+    {
+        prompt = "departure",
+        label = "Offer World mode on leaving afterwards",
+        tooltip = "In Instance mode: on reaching the open world after a completed key or a raid, "
+            .. "or on leaving the group. Same as /km prompts departure.",
+    },
 }
+
+-- A checkbox's setting, wherever it lives: settings[key], or settings.prompts[prompt].
+function Options.GetSetting(definition)
+    local settings = ns.db.settings
+    if definition.prompt then return settings.prompts[definition.prompt] == true end
+    return settings[definition.key] and true or false
+end
+
+function Options.SetSetting(definition, value)
+    local settings = ns.db.settings
+    if definition.prompt then
+        settings.prompts[definition.prompt] = value
+    else
+        settings[definition.key] = value
+    end
+end
 
 local function CreatePanel()
     local panel = CreateFrame("Frame")
@@ -67,11 +103,17 @@ local function CreatePanel()
             checkbox.Text = checkbox:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
             checkbox.Text:SetPoint("LEFT", checkbox, "RIGHT", 4, 0)
         end
+        if definition.heading then
+            local subheading = panel:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+            subheading:SetPoint("TOPLEFT", anchor, "BOTTOMLEFT", 0, -16)
+            subheading:SetText(definition.heading)
+            anchor = subheading
+        end
         checkbox:SetPoint("TOPLEFT", anchor, "BOTTOMLEFT", 0, -8)
         if checkbox.Text then checkbox.Text:SetText(definition.label) end
         checkbox.tooltipText = definition.tooltip
         checkbox:SetScript("OnClick", function(self)
-            ns.db.settings[definition.key] = self:GetChecked() and true or false
+            Options.SetSetting(definition, self:GetChecked() and true or false)
             ns.SettingsChanged()
         end)
         checkbox.definition = definition
@@ -109,7 +151,7 @@ function Options:Refresh()
     if not (panel and ns.db) then return end
     panel.statusText:SetText("Mode: " .. ns.Switch:ModeLabel())
     for _, checkbox in ipairs(panel.checkboxes) do
-        checkbox:SetChecked(ns.db.settings[checkbox.definition.key] and true or false)
+        checkbox:SetChecked(Options.GetSetting(checkbox.definition))
     end
 end
 

@@ -1,0 +1,16 @@
+<!--
+  Bindings.xml
+  SPDX-License-Identifier: GPL-3.0-or-later
+
+  The client loads this file from the addon folder by itself; it is not listed in the TOC.
+  One binding (#26), under Key Bindings > AddOns > KeyMode: open the preview dialog for a
+  switch between Instance and World mode, the same as the minimap button's left click.
+  The category name is looked up in _G (ADDONS = "AddOns"), as the Key Bindings page does
+  (Blizzard_SettingsDefinitions_Frame/Keybindings.lua, GetBindingCategoryName). Names are
+  BINDING_HEADER_KEYMODE and BINDING_NAME_KEYMODE_TOGGLE, set in UI.lua.
+-->
+<Bindings>
+	<Binding name="KEYMODE_TOGGLE" header="KEYMODE" category="ADDONS">
+		KeyMode_Toggle()
+	</Binding>
+</Bindings>
