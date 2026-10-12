@@ -98,6 +98,7 @@ realm, C on another. "yes (#6)" means the live client did exactly this.
 | Enabled means `GetAddOnEnableState(i, character) > Enum.AddOnEnableState.None` | `AddonList.lua` | yes (#6) |
 | Blizzard calls `C_AddOns.SaveAddOns()` on "Okay" and `C_AddOns.ResetAddOns()` on "Cancel" | same | -- |
 | `GetAddOnInfo` reason is `""` (not nil) when there is nothing to report; also seen: `DEMAND_LOADED`, `DISABLED` | probe scan | yes (#6) |
+| `GetNumAddOns` does not count `Blizzard_*` addons: 191 listed, exactly the Retail folders in `Interface\AddOns`. A dependency on one (CraftSim -> `Blizzard_Professions`) is part of the client, so the graph does not report it missing | `probe inventory` count vs. the folder, v0.3.0 check | yes |
 | `GetAddOnDependencies` returns names exactly as the TOC spells them (`keymode`, not `KeyMode`), so dependency matching must be case-insensitive (#8 does this). Dependencies on Blizzard addons (`Blizzard_Professions`) are not in the addon list and show up as missing | probe scan | yes (#6) |
 | `## Category` metadata is readable through `GetAddOnMetadata(i, "Category")`; 107 of 192 installed addons set it (#21) | probe scan | yes (#6) |
 | `IsEncounterInProgress`, `C_ChallengeMode.IsChallengeModeActive` and `UnitFullName` exist on 12.x (#10) | probe scan | yes (#6) |

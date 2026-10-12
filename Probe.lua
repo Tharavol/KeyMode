@@ -238,10 +238,13 @@ end
 -- whether the fixture actually loaded and its state under every key, so "did the change
 -- take effect" is answered on the next character or after the next /reload without
 -- typing anything. PLAYER_LOGIN fires after every addon has loaded, the fixture included.
+-- Silent once the fixture is uninstalled: a leftover log must not print a "not
+-- installed" line at every login after the session is over.
 local loginFrame = CreateFrame("Frame")
 loginFrame:RegisterEvent("PLAYER_LOGIN")
 loginFrame:SetScript("OnEvent", function()
     if not (ns.db and ns.db.probeLog and #ns.db.probeLog > 0) then return end
+    if not Installed(Probe.TARGET) then return end
     local name, realm = UnitName("player"), UnitFullName and select(2, UnitFullName("player"))
     Out("---- " .. tostring(name) .. "-" .. tostring(realm) .. ": login or reload; "
         .. Probe.TARGET .. " loaded = " .. tostring(C_AddOns.IsAddOnLoaded(Probe.TARGET)))

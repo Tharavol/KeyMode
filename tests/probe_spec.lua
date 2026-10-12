@@ -122,6 +122,14 @@ return function(stub, T)
         T.AssertTrue(log[before + 1]:find("KeyModeProbe loaded = false", 1, true), "load result")
     end)
 
+    T.Test("a login after the fixture is uninstalled stays silent", function()
+        local env = Boot(false)
+        env.ns.db.probeLog = { "an old session" }
+        stub.Fire(env, "PLAYER_LOGIN")
+        T.AssertEqual(#env.ns.db.probeLog, 1, "nothing logged")
+        T.AssertEqual(#stub.TakeChat(env), 0, "nothing printed")
+    end)
+
     T.Test("debug on/off still toggles", function()
         local env = Boot(false)
         stub.Slash(env, "/km debug on")
