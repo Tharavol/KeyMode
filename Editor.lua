@@ -38,9 +38,11 @@ end
 Editor.Plain = Plain
 
 -- `input`: { records, graph, lists = { instance = set, world = set }, isProtected,
--- search = string, onlyListed = bool }. Returns an ordered list of rows:
+-- search = string, onlyListed = bool, pending = { instance = { [name] = reason }, world }
+-- (a suggestion not yet accepted, #21) }. Returns an ordered list of rows:
 --   { name, title, depth, protected,
---     instance = "listed" | "implied" | nil, world = ..., impliedBy = { instance, world },
+--     instance = "listed" | "implied" | "suggested" | nil, world = ...,
+--     impliedBy = { instance, world }, reason = { instance, world } (why it is suggested),
 --     notInstalled = true for a list entry this character does not have }
 -- With a search, matching rows come back flat (depth 0), since a match deep in a tree
 -- means little without its parents. Not-installed list entries always come last.
@@ -48,6 +50,8 @@ function Editor.Rows(input)
     local graph = input.graph
     local canonical = graph.canonical
     local isProtected = input.isProtected or function() return false end
+    local pending = input.pending or {}
+    pending = { instance = pending.instance or {}, world = pending.world or {} }
     local Inventory = ns.Inventory
 
     local titles = {}
@@ -90,9 +94,10 @@ function Editor.Rows(input)
             title = titles[name] or name,
             depth = depth,
             protected = protected,
-            instance = not protected and state.instance[name] or nil,
-            world = not protected and state.world[name] or nil,
+            instance = not protected and (state.instance[name] or (pending.instance[name] and "suggested")) or nil,
+            world = not protected and (state.world[name] or (pending.world[name] and "suggested")) or nil,
             impliedBy = { instance = impliedBy.instance[name], world = impliedBy.world[name] },
+            reason = { instance = pending.instance[name], world = pending.world[name] },
         }
     end
 
@@ -182,13 +187,16 @@ end
 local ROW_HEIGHT = 22
 local COLUMN_INSTANCE, COLUMN_WORLD, COLUMN_NAME = 14, 84, 150
 local INDENT = 16
-local GREY, CLOSE = "|cff999999", "|r"
+local GREY, GOLD, CLOSE = "|cff999999", "|cffffd200", "|r"
 
-local function SetBox(box, state, protected, impliedBy, label)
+local function SetBox(box, state, protected, impliedBy, label, reason)
     box:SetChecked(state ~= nil)
     box:SetAlpha(state == "implied" and 0.45 or 1)
     if protected then box:Disable() else box:Enable() end
-    if state == "implied" and impliedBy then
+    if state == "suggested" then
+        box.tooltip = "Suggested for the " .. label .. " list (" .. tostring(reason)
+            .. "). Accept adds every suggested addon; untick this one to leave it out."
+    elseif state == "implied" and impliedBy then
         box.tooltip = "Off in " .. label .. " mode because it requires " .. impliedBy
             .. ". Tick it to list it on its own."
     elseif protected then
@@ -211,8 +219,12 @@ local function MakeBox(row, which)
     box:SetScript("OnClick", function(self)
         local data = row.data
         if not data then return end
+        -- A suggested box: unticking leaves it out of the suggestion; nothing is saved.
+        if data[which] == "suggested" then
+            if Editor.pending then Editor.pending[which][data.name] = nil end
+            Editor:UpdatePendingBar()
         -- An implied box reads as ticked; clicking it lists the addon on its own.
-        if data[which] == "implied" or self:GetChecked() then
+        elseif data[which] == "implied" or self:GetChecked() then
             ns.Profiles:ListAdd(which, data.name)
         else
             ns.Profiles:ListRemove(which, data.name)
@@ -239,9 +251,12 @@ function Editor.InitRow(row, data)
         row.built = true
     end
     row.data = data
-    SetBox(row.instanceBox, data.instance, data.protected, data.impliedBy.instance, "Instance")
-    SetBox(row.worldBox, data.world, data.protected, data.impliedBy.world, "World")
+    SetBox(row.instanceBox, data.instance, data.protected, data.impliedBy.instance, "Instance",
+        data.reason and data.reason.instance)
+    SetBox(row.worldBox, data.world, data.protected, data.impliedBy.world, "World",
+        data.reason and data.reason.world)
     local text = data.title
+    if data.instance == "suggested" or data.world == "suggested" then text = GOLD .. text .. CLOSE end
     if data.title ~= data.name then text = text .. "  " .. GREY .. data.name .. CLOSE end
     if data.protected then text = text .. "  " .. GREY .. "(protected)" .. CLOSE end
     if data.notInstalled then text = text .. "  " .. GREY .. "(not installed on this character)" .. CLOSE end
@@ -303,6 +318,19 @@ local function CreatePage()
     local import = Button(page, "Import...", 90, function() Editor:ShowImport() end)
     import:SetPoint("RIGHT", export, "LEFT", -8, 0)
     page.exportButton, page.importButton = export, import
+    local suggest = Button(page, "Suggest...", 90, function() Editor:Suggest() end)
+    suggest:SetPoint("RIGHT", import, "LEFT", -8, 0)
+    page.suggestButton = suggest
+
+    -- Shown while a suggestion is pending: what it holds, and Accept / Discard.
+    local discard = Button(page, "Discard", 80, function() Editor:EndSuggestion(false) end)
+    discard:SetPoint("TOPRIGHT", export, "BOTTOMRIGHT", 0, -6)
+    local accept = Button(page, "Accept", 80, function() Editor:EndSuggestion(true) end)
+    accept:SetPoint("RIGHT", discard, "LEFT", -8, 0)
+    local summary = page:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
+    summary:SetPoint("RIGHT", accept, "LEFT", -8, 0)
+    page.pendingBar = { accept = accept, discard = discard, summary = summary }
+    for _, widget in pairs(page.pendingBar) do widget:Hide() end
 
     local header = CreateFrame("Frame", nil, page)
     header:SetHeight(16)
@@ -381,6 +409,7 @@ function Editor:Refresh()
         isProtected = function(name) return ns.Profiles:IsProtected(name) end,
         search = page.search:GetText() or "",
         onlyListed = page.onlyListed:GetChecked(),
+        pending = self.pending,
     })
     self.rows = rows
     local box = page.scrollBox
@@ -551,6 +580,75 @@ function Editor:ShowImport()
     dialog.edit:SetText("")
     dialog:Show()
     dialog.edit:SetFocus()
+end
+
+--------------------------------------------------------------------------
+-- Suggested lists (#21)
+--
+-- Suggest fills both lists' columns with pending ticks from Suggest.Build; nothing is
+-- saved until Accept, and Discard drops it. Unticking a pending box leaves that one out.
+--------------------------------------------------------------------------
+
+local function Count(set)
+    local n = 0
+    for _ in pairs(set) do n = n + 1 end
+    return n
+end
+
+function Editor:UpdatePendingBar()
+    local bar = self.page and self.page.pendingBar
+    if not bar then return end
+    if self.pending then
+        bar.summary:SetText("Suggested: " .. Count(self.pending.instance) .. " Instance, "
+            .. Count(self.pending.world) .. " World")
+        for _, widget in pairs(bar) do widget:Show() end
+    else
+        for _, widget in pairs(bar) do widget:Hide() end
+    end
+end
+
+-- Builds a suggestion for this install, leaving out what the lists already cover.
+function Editor:Suggest()
+    local records, graph = ns.Inventory:Read()
+    local suggestion = ns.Suggest.Build({
+        records = records,
+        graph = graph,
+        region = ns.Suggest.Region(),
+        isProtected = function(name) return ns.Profiles:IsProtected(name) end,
+    })
+    local pending = { instance = {}, world = {} }
+    for _, which in ipairs({ "instance", "world" }) do
+        for _, name in ipairs(suggestion[which]) do
+            if not ns.Profiles:InList(which, name) then
+                pending[which][name] = suggestion.reasons[which][name] or "suggested"
+            end
+        end
+    end
+    if not next(pending.instance) and not next(pending.world) then
+        ns.Print("Nothing to suggest: the lists already cover every match.")
+        return
+    end
+    self.pending = pending
+    self:UpdatePendingBar()
+    self:Refresh()
+end
+
+-- Accept adds every pending name to its list; Discard drops them. Either way it ends.
+function Editor:EndSuggestion(accept)
+    local pending = self.pending
+    if not pending then return end
+    if accept then
+        local added = 0
+        for _, which in ipairs({ "instance", "world" }) do
+            for name in pairs(pending[which]) do
+                if ns.Profiles:ListAdd(which, name) then added = added + 1 end
+            end
+        end
+        ns.Print("Suggestion accepted: " .. added .. " added.")
+    end
+    self.pending = nil
+    self:UpdatePendingBar()
+    self:Refresh()
 end
 
 function Editor:Register()

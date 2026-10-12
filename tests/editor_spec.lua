@@ -39,6 +39,13 @@ return function(stub, T)
         end
     end
 
+    local function Has(lines, needle)
+        for _, line in ipairs(lines) do
+            if line:find(needle, 1, true) then return true end
+        end
+        return false
+    end
+
     local function Outline(rows)
         local parts = {}
         for _, row in ipairs(rows) do parts[#parts + 1] = string.rep(">", row.depth) .. row.name end
@@ -195,6 +202,46 @@ return function(stub, T)
         dialog.edit:SetText("not a list")
         dialog.mergeButton:Click()
         T.AssertTrue(stub.TakeChat(env)[1]:find("Import: Not a KeyMode list", 1, true), "error shown")
+    end)
+
+    T.Test("suggest shows pending ticks; untick leaves one out; accept saves, discard drops", function()
+        local env = stub.Boot(function(_, fixtures)
+            stub.AddAddon(fixtures, "TomTom")
+            stub.AddAddon(fixtures, "CraftSim", { metadata = { Category = "Professions" } })
+            stub.AddAddon(fixtures, "DBM-Core")
+            stub.AddAddon(fixtures, "DBM-Raids-Midnight", { deps = { "DBM-Core" } })
+            stub.AddAddon(fixtures, "Details")
+        end)
+        local page = env.ns.Editor.page
+        page._scripts.OnShow(page)
+        page.suggestButton:Click()
+        T.AssertTrue(page.pendingBar.accept:IsShown(), "accept shown")
+        T.AssertEqual(page.pendingBar.summary:GetText(), "Suggested: 2 Instance, 1 World", "summary")
+        local rows = page.scrollBox._dataProvider.rows
+        T.AssertEqual(Find(rows, "CraftSim").instance, "suggested", "pending tick")
+        T.AssertEqual(Find(rows, "CraftSim").reason.instance, "Professions category", "reason")
+        T.AssertEqual(Find(rows, "Details").instance, nil, "not suggested")
+        T.AssertEqual(#env.ns.Profiles:ListNames("instance"), 0, "nothing saved yet")
+
+        local frame = env.CreateFrame("Frame")
+        page.scrollBox._view.init(frame, Find(rows, "TomTom"))
+        frame.instanceBox:SetChecked(false)
+        frame.instanceBox:Click()
+        T.AssertEqual(page.pendingBar.summary:GetText(), "Suggested: 1 Instance, 1 World", "left out")
+
+        page.pendingBar.accept:Click()
+        T.AssertEqual(table.concat(env.ns.Profiles:ListNames("instance"), ","), "CraftSim", "accepted")
+        T.AssertEqual(table.concat(env.ns.Profiles:ListNames("world"), ","), "DBM-Raids-Midnight", "accepted")
+        T.AssertFalse(page.pendingBar.accept:IsShown(), "bar hidden")
+
+        env.ns.Profiles:ListRemove("instance", "CraftSim")
+        page.suggestButton:Click()
+        page.pendingBar.discard:Click()
+        T.AssertEqual(#env.ns.Profiles:ListNames("instance"), 0, "discard saves nothing")
+        page.suggestButton:Click()
+        page.pendingBar.accept:Click()
+        page.suggestButton:Click()
+        T.AssertTrue(Has(stub.TakeChat(env), "Nothing to suggest"), "nothing left to suggest")
     end)
 
     T.Test("/km list clear and copy", function()
