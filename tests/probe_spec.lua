@@ -58,7 +58,7 @@ return function(stub, T)
         T.AssertEqual(calls[1][1], "DisableAddOn")
         T.AssertEqual(calls[1][2], "KeyModeProbe")
         T.AssertEqual(calls[1][3], env.fixtures.player.guid)
-        T.AssertTrue(Has(stub.TakeChat(env), "guid=0 name=0 full=n/a zero=0 all=0"), "visible at once, under every alias")
+        T.AssertTrue(Has(stub.TakeChat(env), "guid=0 name=0 full=n/a zero=0 all=0"), "visible at once")
     end)
 
     T.Test("'all' passes nil and 'zero' passes \"0\"", function()
