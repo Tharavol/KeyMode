@@ -14,6 +14,7 @@
 Core.lua
 Inventory.lua
 Profiles.lua
+Plan.lua
 Switch.lua
 Triggers.lua
 UI.lua
