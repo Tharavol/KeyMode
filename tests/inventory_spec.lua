@@ -11,14 +11,16 @@ return function(stub, T)
 
     local function Boot()
         return stub.Boot(function(_, fixtures)
-            stub.AddAddon(fixtures, "DataStore", { title = "|cff00ff00DataStore|r" })
+            stub.AddAddon(fixtures, "DataStore", { title = "|cff00ff00DataStore|r",
+                metadata = { Category = "Libraries" } })
             stub.AddAddon(fixtures, "DataStore_Containers", { deps = { "datastore" } })
             stub.AddAddon(fixtures, "Altoholic", { deps = { "DataStore", "DataStore_Containers" },
                 optionalDeps = { "Auctionator" } })
             stub.AddAddon(fixtures, "DBM-GUI", { loadOnDemand = true })
             stub.AddAddon(fixtures, "OffHere", { enabled = false })
             stub.AddAddon(fixtures, "AltOnly", { enabledFor = { [OTHER] = true } })
-            stub.AddAddon(fixtures, "Broken", { loadable = false, reason = "MISSING", deps = { "Gone" } })
+            stub.AddAddon(fixtures, "Broken", { loadable = false, reason = "MISSING", deps = { "Gone" },
+                metadata = { Category = "" } })
         end)
     end
 
@@ -47,6 +49,14 @@ return function(stub, T)
         T.AssertTrue(r.KeyMode.loaded, "loaded")
         T.AssertFalse(r.Broken.loadable, "unloadable")
         T.AssertEqual(r.Broken.reason, "MISSING", "reason")
+    end)
+
+    T.Test("category is the TOC's ## Category, nil when absent or empty", function()
+        local env = Boot()
+        local r = ByName(env.ns.Inventory:Scan())
+        T.AssertEqual(r.DataStore.category, "Libraries", "set")
+        T.AssertEqual(r.Altoholic.category, nil, "absent")
+        T.AssertEqual(r.Broken.category, nil, "empty string")
     end)
 
     T.Test("the client's empty reason becomes nil", function()

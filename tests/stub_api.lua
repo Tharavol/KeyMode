@@ -283,6 +283,7 @@ local function MakeFixtures()
         encounterInProgress = false, -- IsEncounterInProgress
         inInstance = false,          -- IsInInstance
         inGroup = false,             -- IsInGroup
+        region = 1,                  -- GetCurrentRegion: 1 US, 2 KR, 3 EU, 4 TW, 5 CN
         cursor = { x = 0, y = 0 },  -- GetCursorPosition, in screen pixels
         minimapShape = nil,         -- GetMinimapShape is only defined when this is set
     }
@@ -364,6 +365,7 @@ function M.Load(configure, fixtures)
     env.ReloadUI = function() fixtures.reloads = fixtures.reloads + 1 end
     env.IsInInstance = function() return fixtures.inInstance end
     env.IsInGroup = function() return fixtures.inGroup end
+    env.GetCurrentRegion = function() return fixtures.region end
     env.time = os.time
 
     env.SlashCmdList = {}

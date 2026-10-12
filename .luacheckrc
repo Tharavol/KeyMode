@@ -41,6 +41,8 @@ read_globals = {
     "InCombatLockdown", "ReloadUI", "UnitGUID", "UnitName", "UnitFullName", "time",
     -- Recovery reminder (#15); nil-checked
     "IsInInstance", "IsInGroup",
+    -- Suggested lists (#21): the player's region picks the Raider.IO database to keep; nil-checked
+    "GetCurrentRegion",
 
     -- Safe-to-switch guard inputs (#10), also probed by `/km debug probe scan` (#6);
     -- each is nil-checked, IsEncounterInProgress unverified on 12.x
