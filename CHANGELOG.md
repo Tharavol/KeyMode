@@ -2,6 +2,24 @@
 
 All notable changes to the KeyMode addon are documented in this file.
 
+## [0.2.0]
+
+Addon inventory and live API verification. Still no switching; that is v0.3.0.
+
+- The enable-state API was verified in-game across characters and realms; the results
+  are in docs/HANDOFF.md. `/km debug probe` is the diagnostic used, with a throwaway
+  `KeyModeProbe` test addon (not shipped) (#6).
+- Inventory of installed addons: title, loadable/reason, load-on-demand, loaded, this
+  character's enable state, and dependencies (#7).
+- Dependency graph: what turning an addon off also turns off, and what turning it on
+  needs. Dependency names match regardless of case; missing dependencies and cycles are
+  handled (#8).
+- Protect list: KeyMode can never be turned off, and BugGrabber and BugSack are
+  protected by default. The list is kept by `/km reset` (#9).
+- Safe-to-switch check: not in combat, not in an active keystone, not during a boss
+  encounter. `/km status` shows the protect list and whether a switch is allowed now
+  (#10).
+
 ## [0.1.0]
 
 First pre-release: scaffolding, the command surface and the entry points. Switching

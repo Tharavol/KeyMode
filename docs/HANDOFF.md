@@ -10,18 +10,26 @@ snapshot.
 
 ## Current state
 
-- v0.1.0 released as a pre-release. Next: v0.2.0 (inventory and live API
-  verification, starting with #6). Files, in TOC load order:
+- v0.1.0 released as a pre-release. v0.2.0 (#6-#10) is complete on
+  `milestone/v0.2.0`, awaiting its in-game check and release. Next: v0.3.0, which #37
+  reshapes (Instance and World lists instead of named profiles). Files, in TOC load
+  order:
   - `Core.lua` -- namespace, `ns.Print`, `ns.Debug`, `ns.GetAddonVersion`, SavedVariables
     defaults, `ns.ResetSettings`, the `ADDON_LOADED` handler.
-  - `Inventory.lua`, `Profiles.lua`, `Triggers.lua` -- module tables only (v0.2.0-v0.5.0).
+  - `Inventory.lua` -- `Inventory:Scan()` / `:Read()` (#7, enable state by GUID), the
+    pure dependency graph `BuildGraph` / `Dependents` / `Requirements` (#8), and the
+    safe-to-switch guard `Inventory:CanSwitch()` (#10).
+  - `Profiles.lua` -- the protect list (#9): `IsProtected`, `ProtectedList`, `Protect`,
+    `Unprotect`. KeyMode is protected in code; removals are saved as `false`.
+  - `Triggers.lua` -- module table only (v0.5.0).
   - `Switch.lua` -- `Switch:IsActive()`, always false until v0.3.0.
   - `UI.lua` -- Addon Compartment handlers (globals named in the TOC) and the minimap
     button (#34); both route through `UI:OnEntryClick` / `UI:ShowEntryTooltip`.
   - `Options.lua` -- Settings canvas panel; `Options.CHECKBOXES` drives the General
     section; `Options:Refresh()` re-reads every widget from `ns.db`.
   - `Probe.lua` -- `/km debug probe`, the in-game enable-state checks for #6 (see
-    "Enable-state probe procedure").
+    "Enable-state probe procedure") and `probe inventory [addon]` for checking #7/#8
+    against the real install. Output is also kept in `KeyModeDB.probeLog`.
   - `Commands.lua` -- loads last; `/keymode`, `/km`; `Commands.COMMANDS` drives both
     dispatch and help.
 - Tests: `tests/stub_api.lua` loads every file `KeyMode.toc` lists, in TOC order, into

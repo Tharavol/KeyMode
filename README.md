@@ -7,8 +7,9 @@ one `/reload`.
 
 > **Status: pre-release.** Development is tracked in milestones v0.1.0 through v1.0.0;
 > see [docs/PLAN.md](docs/PLAN.md). v0.1.0: the options panel, the commands, the
-> minimap button and the Addon Compartment entry work; switching itself arrives with
-> v0.3.0.
+> minimap button and the Addon Compartment entry. v0.2.0: the addon inventory,
+> dependency graph, protect list and safe-to-switch guard, with the enable-state API
+> verified in-game. Switching itself arrives with v0.3.0.
 
 Why
 ---

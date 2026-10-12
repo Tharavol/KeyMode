@@ -177,6 +177,32 @@ function Probe:Scan()
         .. ", UnitFullName " .. tostring(UnitFullName ~= nil))
 end
 
+-- Inventory:Read() as the switch engine will see it (#7), for comparing against the
+-- in-game AddOns list; with an addon name, that addon's two cascades from the graph (#8).
+function Probe:Inventory(name)
+    local records, graph = ns.Inventory:Read()
+    local enabled, loaded, lod, missing = 0, 0, 0, 0
+    for _, record in ipairs(records) do
+        if record.enabled then enabled = enabled + 1 end
+        if record.loaded then loaded = loaded + 1 end
+        if record.loadOnDemand then lod = lod + 1 end
+    end
+    for _ in pairs(graph.missing) do missing = missing + 1 end
+    Out("Inventory: " .. #records .. " installed, " .. enabled .. " enabled for this character, "
+        .. loaded .. " loaded, " .. lod .. " load-on-demand, " .. missing .. " with a missing dependency")
+    if name == "" then return end
+    local canonical = graph.canonical[name:lower()]
+    if not canonical then
+        Out("Inventory: '" .. name .. "' is not installed.")
+        return
+    end
+    local function List(names) return #names > 0 and table.concat(names, ", ") or "none" end
+    Out("  " .. canonical .. " requires: " .. List(graph.deps[canonical]))
+    Out("  turning it off also turns off: " .. List(ns.Inventory.Dependents(graph, { canonical })))
+    Out("  turning it on also needs: " .. List(ns.Inventory.Requirements(graph, { canonical })))
+    if graph.missing[canonical] then Out("  missing: " .. List(graph.missing[canonical])) end
+end
+
 -- `argument` keeps the player's case, since an addon name to report on can be typed.
 function Probe:Run(argument)
     local sub, rest = (argument or ""):match("^(%S*)%s*(.-)$")
@@ -201,6 +227,8 @@ function Probe:Run(argument)
         self:Report(Probe.TARGET)
     elseif lower == "scan" then
         self:Scan()
+    elseif lower == "inventory" then
+        self:Inventory(rest)
     else
         self:Report(sub)
     end

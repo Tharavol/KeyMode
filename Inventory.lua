@@ -5,12 +5,57 @@
 -- enumerates addons (name, title, loadable/reason, load-on-demand, enable state for the
 -- current character), builds the dependency graph (required deps and reverse
 -- dependents), and answers the safe-to-switch question. Pure where it can be, so the
--- offline suite covers it. Filled in by v0.2.0 (#7, #8, #9, #10).
+-- offline suite covers it. Filled in by v0.2.0 (#7, #8, #10).
 
 local _, ns = ...
 
 local Inventory = {}
 ns.Inventory = Inventory
+
+--------------------------------------------------------------------------
+-- Inventory (#7)
+--
+-- One read of every installed addon into plain records, the input to the dependency
+-- graph and (v0.3.0) the switch plan. The enable state is read for this character by
+-- GUID: the live client treats the GUID and the name as the same character, while nil
+-- and "0" mean every character (#6, docs/HANDOFF.md "API facts").
+--------------------------------------------------------------------------
+
+-- Returns a list of records in the client's addon order:
+--   { index, name, title, loadable, reason, loadOnDemand, loaded, enabled,
+--     deps = {...}, optionalDeps = {...} }
+-- `reason` is nil when the client has nothing to report (it answers "" for that).
+-- `deps` and `optionalDeps` are spelled as each TOC wrote them; BuildGraph matches
+-- them to folder names case-insensitively.
+function Inventory:Scan()
+    local guid = UnitGUID("player")
+    local none = Enum.AddOnEnableState.None
+    local records = {}
+    for index = 1, C_AddOns.GetNumAddOns() do
+        local name, title, _, loadable, reason = C_AddOns.GetAddOnInfo(index)
+        if name then
+            records[#records + 1] = {
+                index = index,
+                name = name,
+                title = title or name,
+                loadable = loadable and true or false,
+                reason = reason ~= "" and reason or nil,
+                loadOnDemand = C_AddOns.IsAddOnLoadOnDemand(index) and true or false,
+                loaded = C_AddOns.IsAddOnLoaded(index) and true or false,
+                enabled = C_AddOns.GetAddOnEnableState(index, guid) > none,
+                deps = { C_AddOns.GetAddOnDependencies(index) },
+                optionalDeps = { C_AddOns.GetAddOnOptionalDependencies(index) },
+            }
+        end
+    end
+    return records
+end
+
+-- The installed addons and their dependency graph, read now.
+function Inventory:Read()
+    local records = self:Scan()
+    return records, Inventory.BuildGraph(records)
+end
 
 --------------------------------------------------------------------------
 -- Dependency graph (#8)

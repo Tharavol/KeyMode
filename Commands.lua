@@ -115,7 +115,7 @@ local COMMANDS = {
         name = "debug",
         help = {
             Cmd("/km debug [on|off]") .. " - toggle or set debug messages",
-            Cmd("/km debug probe [scan|enable|disable|save|reset|clear|<addon>]")
+            Cmd("/km debug probe [scan|inventory|enable|disable|save|reset|clear]")
                 .. " - addon API diagnostics (see docs/HANDOFF.md)",
         },
         handler = function(argument, rest)
