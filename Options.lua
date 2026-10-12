@@ -109,7 +109,7 @@ end
 function Options:Refresh()
     local panel = self.panel
     if not (panel and ns.db) then return end
-    panel.statusText:SetText("Mode: " .. (ns.Switch:IsActive() and "|cff00ff00Mythic+|r" or "Normal"))
+    panel.statusText:SetText("Mode: " .. ns.Switch:ModeLabel())
     for _, checkbox in ipairs(panel.checkboxes) do
         checkbox:SetChecked(ns.db.settings[checkbox.definition.key] and true or false)
     end

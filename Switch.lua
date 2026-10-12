@@ -41,6 +41,12 @@ function Switch:Mode()
     return snapshot and snapshot.mode or "off"
 end
 
+-- The mode for display: green while KeyMode is managing the character.
+function Switch:ModeLabel()
+    local mode = self:Mode()
+    return mode == "off" and Switch.MODES.off or ("|cff00ff00" .. Switch.MODES[mode] .. "|r")
+end
+
 -- Records the baseline from `records` (Inventory:Scan()). Never overwrites one that is
 -- pending restore: that would make the current, switched state the "original" and lose
 -- the real one. Returns the snapshot, and false when one already existed.

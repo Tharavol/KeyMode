@@ -170,9 +170,10 @@ return function(stub, T)
             lists = { instance = { KeyMode = true, Lib = true, Solo = true } },
             isProtected = function(name) return protected[name:lower()] or false end,
         })
-        T.AssertEqual(Entries(plan.disable), "Other:cascade,Solo:listed", "only unprotected addons")
+        T.AssertEqual(Entries(plan.disable), "Solo:listed", "only unprotected addons")
         T.AssertEqual(Join(plan.kept), "BugSack,KeyMode,Lib", "kept because of protection")
         T.AssertEqual(plan.target.Lib, true, "BugSack still loads")
+        T.AssertEqual(plan.target.Other, true, "a kept Lib takes no cascade with it")
         T.AssertEqual(plan.target.KeyMode, true, "KeyMode stays on")
     end)
 

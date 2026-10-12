@@ -51,7 +51,7 @@ return function(stub, T)
         Button(env):Click("LeftButton")
         T.AssertEqual(#env.fixtures.settingsOpened, 1, "left opens options")
         Button(env):Click("RightButton")
-        T.AssertTrue(stub.TakeChat(env)[2]:find("Mode: Normal", 1, true), "right prints status")
+        T.AssertTrue(stub.TakeChat(env)[2]:find("Mode: Off", 1, true), "right prints status")
     end)
 
     T.Test("shown by default; /km minimap toggles and the checkbox follows", function()

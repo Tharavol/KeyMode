@@ -129,11 +129,6 @@ function Plan.Build(input)
             end
         end
 
-        local listedNames = SortedKeys(listed)
-        for _, name in ipairs(Inventory.Dependents(graph, listedNames)) do
-            if not listed[name] then cascade[name] = true end
-        end
-
         local protected, keep = {}, {}
         for _, name in ipairs(graph.names) do
             if isProtected(name) then
@@ -143,11 +138,21 @@ function Plan.Build(input)
         end
         for _, name in ipairs(Inventory.Requirements(graph, protected)) do keep[name] = true end
 
+        -- Kept: what the full list and its cascade would have turned off but protection
+        -- holds on. The cascade is then taken from the listed addons that actually go
+        -- off, so a listed DataStore kept for a protected Altoholic does not still take
+        -- its other modules with it.
+        for _, name in ipairs(Inventory.Dependents(graph, SortedKeys(listed))) do
+            if keep[name] and not listed[name] then keptSet[name] = true end
+        end
         for name in pairs(keep) do
-            if listed[name] or cascade[name] then
+            if listed[name] then
                 keptSet[name] = true
-                listed[name], cascade[name] = nil, nil
+                listed[name] = nil
             end
+        end
+        for _, name in ipairs(Inventory.Dependents(graph, SortedKeys(listed))) do
+            if not listed[name] and not keep[name] then cascade[name] = true end
         end
     end
 
