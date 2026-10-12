@@ -12,8 +12,8 @@ management.
 
 ## Current state
 
-- v0.1.0 and v0.2.0 released as pre-releases. v0.3.0 (#11-#16, #37) is complete on
-  `milestone/v0.3.0`, awaiting its in-game check and release. Files, in TOC load
+- v0.1.0 to v0.3.0 released as pre-releases. v0.4.0 (#17-#21) is complete on
+  `milestone/v0.4.0`, awaiting its in-game check and release. Files, in TOC load
   order:
   - `Core.lua` -- namespace, `ns.Print`, `ns.Debug`, `ns.GetAddonVersion`, SavedVariables
     defaults (schema v2: `lists`, `snapshots`, `protected`, `settings`), `ns.Migrate`
@@ -30,6 +30,11 @@ management.
     lists, isProtected) -> `{ target, disable, enable, kept, removed, unknown }`.
     Protected addons and everything they require are kept, and the cascade is taken
     from the listed addons that actually go off.
+  - `Share.lua` -- `Share.Encode` / `Decode` / `Diff` / `Apply` (#20), pure: the plain-text
+    list format (`KeyMode lists 1`, `[instance]`, `[world]`, `[protected]`).
+  - `Suggest.lua` -- `Suggest.Build` (#21), pure: data-driven category and name-pattern
+    rules for both lists, smallest set (nothing that requires another suggestion);
+    `Suggest.Region()`, `Suggest.CURRENT_EXPANSION` (bump each expansion).
   - `Switch.lua` -- the only caller of `EnableAddOn`/`DisableAddOn` outside the probe.
     `Snapshot`, `Mode`, `ModeLabel`, `TakeBaseline` (#12), `Preview`, `Apply` (#14),
     `Reconcile` and the `PLAYER_LOGIN` handler: the login check (#14) and the Instance
@@ -37,9 +42,15 @@ management.
     across the reload for the confirmation line.
   - `Triggers.lua` -- module table only (v0.5.0).
   - `UI.lua` -- Addon Compartment handlers (globals named in the TOC) and the minimap
-    button (#34); both route through `UI:OnEntryClick` / `UI:ShowEntryTooltip`.
+    button (#34); both route through `UI:OnEntryClick` / `UI:ShowEntryTooltip`. The
+    preview dialog (#17): `UI:Preview(mode)` (every switch path), `UI:ConfirmPreview`,
+    pure `UI.PreviewSections` / `PreviewText`. `Switch:Check` runs before it opens and
+    again on Confirm.
   - `Options.lua` -- Settings canvas panel; `Options.CHECKBOXES` drives the General
     section; `Options:Refresh()` re-reads every widget from `ns.db`.
+  - `Editor.lua` -- the Lists subpage (#18): pure `Editor.Rows`, the scroll list
+    (`WowScrollBoxList`), clear/copy (#19), the import/export dialog (#20) and pending
+    suggestions with Accept/Discard (#21).
   - `Probe.lua` -- `/km debug probe`, the in-game enable-state checks for #6 (see
     "Enable-state probe procedure") and `probe inventory [addon]` for checking #7/#8
     against the real install. Output is also kept in `KeyModeDB.probeLog`.
