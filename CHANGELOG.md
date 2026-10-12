@@ -26,6 +26,11 @@ Switching and list editing without slash commands.
   databases for Instance; DBM raid and dungeon modules for World). Nothing is saved
   until Accept (#21).
 - `/km debug probe categories` lists the `## Category` values in use.
+- Fix: the default protect list named `BugGrabber`, but the addon's folder is
+  `!BugGrabber`, so it never matched. Saved data moves to the real name (schema 3).
+  Switching was not affected, since BugSack requires it and what a protected addon
+  requires always stays on. The editor now shows those addons locked, "needed by" the
+  protected one.
 
 ## [0.3.0]
 
