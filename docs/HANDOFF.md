@@ -27,8 +27,8 @@ snapshot.
 - Tests: `tests/stub_api.lua` loads every file `KeyMode.toc` lists, in TOC order, into
   an isolated environment per test; `tests/run_tests.lua` runs the `*_spec.lua` files.
   The stub models installed addons (`stub.AddAddon`), dependencies and per-character
-  enable state; `stub_spec.lua` pins that model. Character keys (GUID, name, nil) are
-  treated as distinct until #6 says how the client resolves them.
+  enable state; `stub_spec.lua` pins that model. Character keys resolve the way the live
+  client was seen to resolve them (#6, "API facts").
 - Settings plumbing: writers call `ns.SettingsChanged()`; views register with
   `ns.OnSettingsChanged(fn)`. Startup work needing `ns.db` registers with
   `ns.OnLoaded(fn)`, run at KeyMode's `ADDON_LOADED` in TOC order.
@@ -51,18 +51,34 @@ snapshot.
 
 ## API facts
 
-Verified against source; live in-game confirmation is a v0.2.0 issue. Until then treat
-the "live" column as unconfirmed.
+Verified against source, then checked in-game with `/km debug probe` on 2026-10-12
+(#6): Interface 120100, 192 addons, three characters -- A and B on one
+realm, C on another. "yes (#6)" means the live client did exactly this.
 
 | Fact | Source | Live |
 | --- | --- | --- |
-| `C_AddOns.EnableAddOn(name, character)`, `DisableAddOn`, `GetAddOnEnableState` take a `character` cstring, documented non-nilable with default `"0"` | `Blizzard_APIDocumentationGenerated/AddOnsDocumentation.lua` | -- |
-| Blizzard's in-game AddOn list passes `UnitGUID("player")` as `character`, and `nil` for "All characters" | `Blizzard_AddOnList/AddonList.lua` (`addonCharacter = UnitGUID("player")`, `GetAddonCharacter`) | -- |
-| Enabled means `GetAddOnEnableState(i, character) > Enum.AddOnEnableState.None` | same | -- |
+| `C_AddOns.EnableAddOn(name, character)`, `DisableAddOn`, `GetAddOnEnableState` take a `character` cstring, documented non-nilable with default `"0"` | `Blizzard_APIDocumentationGenerated/AddOnsDocumentation.lua` | nil is accepted without error by all three (#6) |
+| Blizzard's in-game AddOn list passes `UnitGUID("player")` as `character`, and `nil` for "All characters" | `Blizzard_AddOnList/AddonList.lua` (`addonCharacter = UnitGUID("player")`, `GetAddonCharacter`) | yes (#6) |
+| `UnitGUID("player")` and `UnitName("player")` address the same character: a change through either reads back identically through both | probe | yes (#6) |
+| A change by GUID, saved, reaches only this character: B (same realm) and C (other realm) still loaded the fixture | probe, steps 7-8 | yes (#6) |
+| A change by nil, saved, reaches every character, across realms | probe, steps 10-11 | yes (#6) |
+| As a query, `"0"` answers the same as nil (the across-characters aggregate). Its reach as a mutation was not tested across characters, so KeyMode never passes it | probe | partly (#6) |
+| `"Name-Realm"` is not a character key: queries answer All whatever the state, mutations do nothing | probe, step 3e | yes (#6) |
+| The nil aggregate counts only characters that have an entry for the addon. A brand-new addon has one only for characters it was set on, so `nil` read None after disabling it for one character; after an "all characters" change it read Some (others still on). Explanation inferred from the data | probe | inferred (#6) |
+| A change shows in `GetAddOnEnableState` at once, and takes effect at the next `/reload` even **without** `SaveAddOns()` | probe, step 3 | yes (#6) |
+| `ResetAddOns()` undoes every unsaved change at once, so anything that calls it between KeyMode's changes and the reload (Blizzard's AddOn list "Cancel") would discard a switch. KeyMode calls `SaveAddOns()` and then `ReloadUI()` in the same click | probe, step 6 | yes (#6) |
+| Enabled means `GetAddOnEnableState(i, character) > Enum.AddOnEnableState.None` | `AddonList.lua` | yes (#6) |
 | Blizzard calls `C_AddOns.SaveAddOns()` on "Okay" and `C_AddOns.ResetAddOns()` on "Cancel" | same | -- |
-| The Addon Compartment passes `UnitName("player")` (not the GUID) and counts an addon only when `GetAddOnEnableState(i, name) == Enum.AddOnEnableState.All`; `Enum.AddOnEnableState` is None = 0, Some = 1, All = 2 | `Blizzard_Minimap/Mainline/AddonCompartment.lua`, `AddOnsDocumentation.lua` | -- |
+| `GetAddOnInfo` reason is `""` (not nil) when there is nothing to report; also seen: `DEMAND_LOADED`, `DISABLED` | probe scan | yes (#6) |
+| `GetAddOnDependencies` returns names exactly as the TOC spells them (`keymode`, not `KeyMode`), so dependency matching must be case-insensitive (#8 does this). Dependencies on Blizzard addons (`Blizzard_Professions`) are not in the addon list and show up as missing | probe scan | yes (#6) |
+| `## Category` metadata is readable through `GetAddOnMetadata(i, "Category")`; 107 of 192 installed addons set it (#21) | probe scan | yes (#6) |
+| `IsEncounterInProgress`, `C_ChallengeMode.IsChallengeModeActive` and `UnitFullName` exist on 12.x (#10) | probe scan | yes (#6) |
+| The Addon Compartment passes `UnitName("player")` (not the GUID) and counts an addon only when `GetAddOnEnableState(i, name) == Enum.AddOnEnableState.All`; `Enum.AddOnEnableState` is None = 0, Some = 1, All = 2 | `Blizzard_Minimap/Mainline/AddonCompartment.lua`, `AddOnsDocumentation.lua` | values yes (#6) |
 | Compartment TOC fields are `AddonCompartmentFunc`, `AddonCompartmentFuncOnEnter`, `AddonCompartmentFuncOnLeave`, called as globals with `(addonName, buttonName)` and `(addonName, menuButton)`; icon from `IconTexture` or `IconAtlas` | `AddonCompartment.lua` | yes (PR #32) |
-| Enable state is stored per character in `WTF\Account\<ACCOUNT>\<Realm>\<Character>\AddOns.txt` as `Name: enabled|disabled` and rewritten by the client on logout | observed on disk | -- |
+| Enable state is stored per character in `WTF\Account\<ACCOUNT>\<Realm>\<Character>\AddOns.txt` as `Name: enabled|disabled`. At exit the client rewrote that file for every character with an entry for a changed addon (30 of 49), not only those logged in. Not every installed addon appears (KeyMode itself does not), so the file is no substitute for the API and KeyMode never reads it | observed on disk | yes (#6) |
+
+Decision for v0.3.0: the switch engine passes `UnitGUID("player")` to every enable-state
+call, calls `SaveAddOns()` then `ReloadUI()`, and never passes nil or `"0"`.
 
 Source: `Gethe/wow-ui-source`, `live` branch, fetched 2026-10-08.
 
