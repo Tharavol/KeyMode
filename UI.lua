@@ -1,8 +1,8 @@
 -- UI.lua
 -- SPDX-License-Identifier: GPL-3.0-or-later
 --
--- Player-facing entry points and dialogs: the Addon Compartment entry (#4), and later
--- the preview dialog (#17), key binding and minimap button (#26).
+-- Player-facing entry points and dialogs: the Addon Compartment entry (#4), the minimap
+-- button (#34) and the preview dialog (#17); later the key binding.
 
 local ADDON_NAME, ns = ...
 
@@ -19,13 +19,13 @@ ns.UI = UI
 --------------------------------------------------------------------------
 
 -- Shared by the compartment entry and the minimap button so the two always do the same
--- thing. Left click opens the options panel; right click prints status. Once switching
--- exists (v0.3.0), left click becomes "toggle via the preview dialog".
+-- thing. Left click opens the preview dialog for a toggle (#17); right click opens the
+-- options panel. The tooltip shows the mode, so status needs no click of its own.
 function UI:OnEntryClick(buttonName)
     if buttonName == "RightButton" then
-        ns.Commands:Dispatch("status")
-    else
         ns.Options:Open()
+    else
+        self:Preview(ns.Switch:ToggleTarget())
     end
 end
 
@@ -33,8 +33,9 @@ function UI:ShowEntryTooltip(owner, extraHint)
     GameTooltip:SetOwner(owner, "ANCHOR_LEFT")
     GameTooltip:AddLine(ADDON_NAME)
     GameTooltip:AddLine("Mode: " .. ns.Switch:ModeLabel(), 1, 1, 1)
-    GameTooltip:AddLine("Left-click: options", 0.6, 0.6, 0.6)
-    GameTooltip:AddLine("Right-click: status", 0.6, 0.6, 0.6)
+    GameTooltip:AddLine("Left-click: switch to " .. ns.Switch.MODES[ns.Switch:ToggleTarget()] .. " mode",
+        0.6, 0.6, 0.6)
+    GameTooltip:AddLine("Right-click: options", 0.6, 0.6, 0.6)
     if extraHint then GameTooltip:AddLine(extraHint, 0.6, 0.6, 0.6) end
     GameTooltip:Show()
 end
@@ -205,3 +206,166 @@ loginFrame:SetScript("OnEvent", function(self)
     self:UnregisterEvent("PLAYER_LOGIN")
     UI:UpdateMinimapButton()
 end)
+
+--------------------------------------------------------------------------
+-- Preview dialog (#17)
+--
+-- Every switch path opens this before anything changes: the mode commands, the minimap
+-- button and the compartment entry. It shows the plan for the target mode and switches
+-- only on Confirm and Reload, which re-runs the guard (Switch:Apply), since combat or a
+-- key can start while the dialog is open. Templates were checked against the live
+-- client source (docs/HANDOFF.md "UI templates for v0.4.0").
+--------------------------------------------------------------------------
+
+local GOLD, GREY, CLOSE = "|cffffd200", "|cff999999", "|r"
+
+local function Joined(names) return table.concat(names, ", ") end
+
+-- The dialog's body as sections, from a plan (Plan.Build). Pure, so the wording is
+-- tested offline: { { title, lines = {...} }, ... }, empty sections left out.
+function UI.PreviewSections(plan)
+    local sections = {}
+    local direct, cascade = {}, {}
+    for _, entry in ipairs(plan.disable) do
+        local bucket = entry.reason == "cascade" and cascade or direct
+        bucket[#bucket + 1] = entry.name
+    end
+    if #plan.disable > 0 then
+        local lines = {}
+        if #direct > 0 then lines[#lines + 1] = Joined(direct) end
+        if #cascade > 0 then
+            lines[#lines + 1] = GREY .. "Because they require one of those: " .. Joined(cascade) .. CLOSE
+        end
+        sections[#sections + 1] = { title = "Will turn off (" .. #plan.disable .. ")", lines = lines }
+    end
+    if #plan.enable > 0 then
+        local names = {}
+        for _, entry in ipairs(plan.enable) do names[#names + 1] = entry.name end
+        sections[#sections + 1] = { title = "Will turn on (" .. #plan.enable .. ")", lines = { Joined(names) } }
+    end
+    if #plan.kept > 0 then
+        sections[#sections + 1] = { title = "Kept on (protected, or needed by a protected addon)",
+            lines = { Joined(plan.kept) } }
+    end
+    if #plan.unknown > 0 then
+        sections[#sections + 1] = { title = "On the list but not installed here", lines = { Joined(plan.unknown) } }
+    end
+    if #plan.removed > 0 then
+        sections[#sections + 1] = { title = "No longer installed, skipped", lines = { Joined(plan.removed) } }
+    end
+    return sections
+end
+
+function UI.PreviewText(plan)
+    local parts = {}
+    for _, section in ipairs(UI.PreviewSections(plan)) do
+        parts[#parts + 1] = GOLD .. section.title .. CLOSE .. "\n" .. table.concat(section.lines, "\n")
+    end
+    return table.concat(parts, "\n\n")
+end
+
+local DIALOG_WIDTH, DIALOG_HEIGHT = 480, 400
+
+local function CreateDialog()
+    local dialog, template = ns.CreateFrameWithFallback("Frame", UIParent,
+        { "BasicFrameTemplateWithInset" }, "KeyModePreviewDialog")
+    dialog:SetSize(DIALOG_WIDTH, DIALOG_HEIGHT)
+    dialog:SetPoint("CENTER")
+    dialog:SetFrameStrata("DIALOG")
+    dialog:SetToplevel(true)
+    dialog:EnableMouse(true)
+    dialog:SetMovable(true)
+    dialog:SetClampedToScreen(true)
+    dialog:RegisterForDrag("LeftButton")
+    dialog:SetScript("OnDragStart", dialog.StartMoving)
+    dialog:SetScript("OnDragStop", dialog.StopMovingOrSizing)
+    dialog:Hide()
+
+    -- The template supplies TitleText and a close button; without it, a plain title.
+    local title = template and dialog.TitleText
+    if not title then
+        title = dialog:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+        title:SetPoint("TOP", 0, -6)
+    end
+    dialog.title = title
+
+    local intro = dialog:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
+    intro:SetPoint("TOPLEFT", 16, -34)
+    intro:SetPoint("RIGHT", dialog, "RIGHT", -16, 0)
+    intro:SetJustifyH("LEFT")
+    dialog.intro = intro
+
+    local scroll = ns.CreateFrameWithFallback("ScrollFrame", dialog, { "UIPanelScrollFrameTemplate" })
+    scroll:SetPoint("TOPLEFT", 16, -60)
+    scroll:SetPoint("BOTTOMRIGHT", -34, 48)
+    local content = CreateFrame("Frame", nil, scroll)
+    content:SetSize(DIALOG_WIDTH - 56, 1)
+    scroll:SetScrollChild(content)
+    local body = content:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
+    body:SetPoint("TOPLEFT")
+    body:SetWidth(DIALOG_WIDTH - 56)
+    body:SetJustifyH("LEFT")
+    body:SetSpacing(2)
+    dialog.scroll, dialog.content, dialog.body = scroll, content, body
+
+    local confirm = ns.CreateFrameWithFallback("Button", dialog, { "UIPanelButtonTemplate" })
+    confirm:SetSize(160, 24)
+    confirm:SetPoint("BOTTOMRIGHT", -16, 14)
+    confirm:SetText("Confirm and Reload")
+    confirm:SetScript("OnClick", function() UI:ConfirmPreview() end)
+    dialog.confirmButton = confirm
+
+    local cancel = ns.CreateFrameWithFallback("Button", dialog, { "UIPanelButtonTemplate" })
+    cancel:SetSize(100, 24)
+    cancel:SetPoint("RIGHT", confirm, "LEFT", -8, 0)
+    cancel:SetText("Cancel")
+    cancel:SetScript("OnClick", function() dialog:Hide() end)
+    dialog.cancelButton = cancel
+
+    -- Escape closes it, like every other Blizzard dialog.
+    if type(UISpecialFrames) == "table" then
+        UISpecialFrames[#UISpecialFrames + 1] = "KeyModePreviewDialog"
+    end
+    return dialog
+end
+
+local INTRO = {
+    instance = "Turns off the Instance list for this character, then reloads.",
+    world = "Turns off the World list for this character, then reloads.",
+    off = "Restores this character's own setup and stops managing it, then reloads.",
+}
+
+-- Opens the dialog for a switch to `mode`, or says why not. A switch with nothing to
+-- change is applied straight away (it records the mode and needs no reload), since a
+-- dialog listing nothing would only ask the player to confirm a no-op.
+function UI:Preview(mode)
+    local ok, reason = ns.Switch:Check(mode)
+    if not ok then
+        ns.Print(reason)
+        return
+    end
+    local plan = ns.Switch:Preview(mode)
+    if #plan.disable == 0 and #plan.enable == 0 then
+        local _, message = ns.Switch:Apply(mode)
+        if message then ns.Print(message) end
+        return
+    end
+    local dialog = self.dialog or CreateDialog()
+    self.dialog = dialog
+    dialog.mode = mode
+    dialog.title:SetText("Switch to " .. ns.Switch.MODES[mode] .. " mode")
+    dialog.intro:SetText(INTRO[mode])
+    dialog.body:SetText(UI.PreviewText(plan))
+    dialog.content:SetHeight((dialog.body:GetStringHeight() or 0) + 8)
+    dialog:Show()
+end
+
+-- Confirm and Reload. Apply plans again from the current state, so anything changed
+-- since the dialog opened is accounted for; it reloads on success, or explains.
+function UI:ConfirmPreview()
+    local dialog = self.dialog
+    if not dialog then return end
+    dialog:Hide()
+    local _, message = ns.Switch:Apply(dialog.mode)
+    if message then ns.Print(message) end
+end

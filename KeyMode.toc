@@ -15,9 +15,12 @@ Core.lua
 Inventory.lua
 Profiles.lua
 Plan.lua
+Share.lua
+Suggest.lua
 Switch.lua
 Triggers.lua
 UI.lua
 Options.lua
+Editor.lua
 Probe.lua
 Commands.lua

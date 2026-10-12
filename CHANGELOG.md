@@ -2,6 +2,36 @@
 
 All notable changes to the KeyMode addon are documented in this file.
 
+## [0.4.0]
+
+Switching and list editing without slash commands.
+
+- Preview dialog: every switch, from a command, the minimap button or the Addon
+  Compartment entry, first lists what will be turned off and on (cascade entries
+  marked, protected and not-installed entries shown) and switches only on Confirm and
+  Reload. Left-click on the minimap button now opens it; right-click opens the options
+  (#17).
+- List editor: Options > AddOns > KeyMode > Lists, with an Instance and a World
+  checkbox per addon, search, a "show only listed" filter, dependents nested under
+  their parent and shown with a dimmed tick when their parent is listed, and protected
+  addons locked (#18).
+- Clear a list or copy one into the other, from the Lists page or with `/km list
+  instance clear` and `/km list world copy instance` (#19).
+- Import and export: both lists, and optionally the protect list, as plain text.
+  `/km export`, `/km import`, or the buttons on the Lists page. Import shows every
+  change before Merge or Replace (#20).
+- Suggested lists: the Suggest button fills both lists with pending ticks from each
+  addon's TOC category and known name patterns (profession and auction tools,
+  collections, maps, legacy and open-world DBM modules, other regions' Raider.IO
+  databases for Instance; DBM raid and dungeon modules for World). Nothing is saved
+  until Accept (#21).
+- `/km debug probe categories` lists the `## Category` values in use.
+- Fix: the default protect list named `BugGrabber`, but the addon's folder is
+  `!BugGrabber`, so it never matched. Saved data moves to the real name (schema 3).
+  Switching was not affected, since BugSack requires it and what a protected addon
+  requires always stays on. The editor now shows those addons locked, "needed by" the
+  protected one.
+
 ## [0.3.0]
 
 Switching, from the command line. Named profiles are replaced by two fixed lists (#37):

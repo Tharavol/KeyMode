@@ -9,8 +9,9 @@ one `/reload`.
 > see [docs/PLAN.md](docs/PLAN.md). v0.1.0: the options panel, the commands, the
 > minimap button and the Addon Compartment entry. v0.2.0: the addon inventory,
 > dependency graph, protect list and safe-to-switch guard, with the enable-state API
-> verified in-game. v0.3.0: Instance and World modes and the switch engine, from the
-> command line. The preview dialog and list editor arrive with v0.4.0.
+> verified in-game. v0.3.0: Instance and World modes and the switch engine. v0.4.0: the
+> preview dialog, the list editor, import/export and suggested lists. Prompts arrive
+> with v0.5.0.
 
 Why
 ---
@@ -53,12 +54,14 @@ Commands
 Tharavol addons.
 
 - `/km` - open the options panel (also: `options`, `config`, `gui`)
-- `/km instance` - turn off the Instance list and reload
-- `/km world` - turn off the World list and reload
-- `/km off` - restore this character's own setup and stop managing it
-- `/km toggle` - switch between Instance and World mode (from Off: Instance)
-- `/km preview [instance|world|off]` - list what a switch would change, without reloading
-- `/km list [instance|world] [add|remove <addon>]` - show or edit a list
+- `/km instance` - preview turning off the Instance list, then confirm and reload
+- `/km world` - preview turning off the World list, then confirm and reload
+- `/km off` - preview restoring this character's own setup, then confirm and reload
+- `/km toggle` - the same for Instance <-> World (from Off: Instance)
+- `/km preview [instance|world|off]` - list what a switch would change in chat
+- `/km list [instance|world] [add|remove <addon>|clear|copy <other>]` - show or edit a list
+- `/km export` - copy both lists as text, for backup or another account
+- `/km import` - paste exported lists; shows the changes before applying
 - `/km protect [add|remove <addon>]` - show or edit the addons no switch turns off
 - `/km status` - show the current mode, list sizes and settings
 - `/km version` - show the addon version
@@ -68,7 +71,9 @@ Tharavol addons.
 - `/km help` - list every command
 
 The minimap button and the Addon Compartment entry (the addon button by the minimap)
-do the same thing: left-click opens the options panel, right-click prints status. Drag
+do the same thing: left-click opens the preview dialog for a toggle, right-click opens
+the options panel. The lists are edited under Options > AddOns > KeyMode > Lists, which
+also has Suggest, Import and Export. Drag
 the minimap button around the minimap edge to move it; minimap-button bars such as
 HidingBar can collect it.
 

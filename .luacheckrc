@@ -3,7 +3,7 @@ max_line_length = 120
 
 -- The luarocks CI action installs into .luarocks/ inside the workspace, so
 -- `luacheck .` would otherwise lint the toolchain along with the addon.
-exclude_files = {".luarocks/**", ".luarocks", "lua_modules/**"}
+exclude_files = {".luarocks/**", ".luarocks", "lua_modules/**", ".claude/**"}
 
 -- WoW event handlers always receive (self, event, ...); ignore unused args
 -- entirely since callbacks must match Blizzard's fixed signatures.
@@ -22,6 +22,9 @@ globals = {
     "KeyMode_OnAddonCompartmentClick",
     "KeyMode_OnAddonCompartmentEnter",
     "KeyMode_OnAddonCompartmentLeave",
+
+    -- Blizzard's list of frames Escape closes; the preview dialog adds itself (#17)
+    "UISpecialFrames",
 }
 
 read_globals = {
@@ -29,8 +32,11 @@ read_globals = {
     "C_AddOns", "Enum",
 
     -- Frame / UI globals
-    "CreateFrame", "DEFAULT_CHAT_FRAME", "GameTooltip", "Settings",
+    "CreateFrame", "DEFAULT_CHAT_FRAME", "GameTooltip", "Settings", "UIParent",
     "Minimap", "GetCursorPosition",
+    -- List editor (#18): scroll list API and the generic confirmation popup
+    "CreateScrollBoxListLinearView", "ScrollUtil", "CreateDataProvider",
+    "StaticPopup_ShowGenericConfirmation",
     -- Defined by minimap-reshaping addons, not the base client; always nil-checked
     "GetMinimapShape",
 
@@ -38,6 +44,8 @@ read_globals = {
     "InCombatLockdown", "ReloadUI", "UnitGUID", "UnitName", "UnitFullName", "time",
     -- Recovery reminder (#15); nil-checked
     "IsInInstance", "IsInGroup",
+    -- Suggested lists (#21): the player's region picks the Raider.IO database to keep; nil-checked
+    "GetCurrentRegion",
 
     -- Safe-to-switch guard inputs (#10), also probed by `/km debug probe scan` (#6);
     -- each is nil-checked, IsEncounterInProgress unverified on 12.x

@@ -203,6 +203,34 @@ function Probe:Inventory(name)
     if graph.missing[canonical] then Out("  missing: " .. List(graph.missing[canonical])) end
 end
 
+-- Every `## Category` value in use and how many addons carry it, for the suggested lists
+-- (#21). Chat gets the tally; the full addon -> category map goes only to the log, read
+-- back from SavedVariables, since ~190 lines would bury the chat frame.
+function Probe:Categories()
+    local tally, without = {}, 0
+    local count = C_AddOns.GetNumAddOns()
+    local log = ns.db and ns.db.probeLog
+    for index = 1, count do
+        local folder = C_AddOns.GetAddOnInfo(index)
+        local category = C_AddOns.GetAddOnMetadata(index, "Category")
+        if category and category ~= "" then
+            tally[category] = (tally[category] or 0) + 1
+            if log then log[#log + 1] = "  category: " .. folder .. " = " .. category end
+        else
+            without = without + 1
+            if log then log[#log + 1] = "  category: " .. folder .. " = (none)" end
+        end
+    end
+    local names = {}
+    for category in pairs(tally) do names[#names + 1] = category end
+    table.sort(names, function(a, b)
+        if tally[a] ~= tally[b] then return tally[a] > tally[b] end
+        return a:lower() < b:lower()
+    end)
+    Out("Categories: " .. #names .. " values over " .. (count - without) .. " addons; " .. without .. " have none.")
+    for _, category in ipairs(names) do Out("  " .. tally[category] .. "  " .. category) end
+end
+
 -- `argument` keeps the player's case, since an addon name to report on can be typed.
 function Probe:Run(argument)
     local sub, rest = (argument or ""):match("^(%S*)%s*(.-)$")
@@ -229,6 +257,8 @@ function Probe:Run(argument)
         self:Scan()
     elseif lower == "inventory" then
         self:Inventory(rest)
+    elseif lower == "categories" then
+        self:Categories()
     else
         self:Report(sub)
     end

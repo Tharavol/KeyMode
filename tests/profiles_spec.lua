@@ -1,7 +1,7 @@
 -- profiles_spec.lua
 -- SPDX-License-Identifier: GPL-3.0-or-later
 --
--- The protect list (#9): KeyMode is always protected, the defaults are BugGrabber and
+-- The protect list (#9): KeyMode is always protected, the defaults are !BugGrabber and
 -- BugSack, names match in any case, and a removal survives the next login.
 
 return function(stub, T)
@@ -18,9 +18,9 @@ return function(stub, T)
         return stub.Boot(function(e) e.KeyModeDB = saved end)
     end
 
-    T.Test("defaults: KeyMode, BugGrabber and BugSack, sorted", function()
+    T.Test("defaults: KeyMode, !BugGrabber and BugSack, sorted", function()
         local env = stub.Boot()
-        T.AssertEqual(Joined(env), "BugGrabber,BugSack,KeyMode")
+        T.AssertEqual(Joined(env), "!BugGrabber,BugSack,KeyMode")
     end)
 
     T.Test("the list is stored at the top level, not under settings", function()
@@ -36,7 +36,7 @@ return function(stub, T)
         local Profiles = env.ns.Profiles
         T.AssertTrue(Profiles:IsProtected("KeyMode"), "saved false ignored")
         T.AssertTrue(Profiles:IsProtected("keymode"), "any case")
-        T.AssertEqual(Joined(env), "BugGrabber,BugSack,KeyMode", "listed once")
+        T.AssertEqual(Joined(env), "!BugGrabber,BugSack,KeyMode", "listed once")
     end)
 
     T.Test("KeyMode cannot be removed", function()
@@ -51,7 +51,7 @@ return function(stub, T)
         local env = stub.Boot()
         local Profiles = env.ns.Profiles
         T.AssertTrue(Profiles:IsProtected("bugsack"), "lower")
-        T.AssertTrue(Profiles:IsProtected("BUGGRABBER"), "upper")
+        T.AssertTrue(Profiles:IsProtected("!BUGGRABBER"), "upper")
         T.AssertTrue(Profiles:IsProtected("  BugSack "), "trimmed")
         T.AssertFalse(Profiles:IsProtected("Details"), "unlisted")
         T.AssertFalse(Profiles:IsProtected(""), "empty")
@@ -63,9 +63,9 @@ return function(stub, T)
         local Profiles = env.ns.Profiles
         T.AssertTrue(Profiles:Protect("Details"), "ok")
         T.AssertTrue(Profiles:IsProtected("details"), "protected")
-        T.AssertEqual(Joined(env), "BugGrabber,BugSack,Details,KeyMode")
+        T.AssertEqual(Joined(env), "!BugGrabber,BugSack,Details,KeyMode")
         T.AssertTrue(Profiles:Protect("DETAILS"), "again is ok")
-        T.AssertEqual(Joined(env), "BugGrabber,BugSack,Details,KeyMode", "no second spelling")
+        T.AssertEqual(Joined(env), "!BugGrabber,BugSack,Details,KeyMode", "no second spelling")
     end)
 
     T.Test("Protect rejects an empty name", function()
@@ -80,7 +80,7 @@ return function(stub, T)
         local Profiles = env.ns.Profiles
         T.AssertTrue(Profiles:Unprotect("bugsack"), "ok")
         T.AssertFalse(Profiles:IsProtected("BugSack"), "removed")
-        T.AssertEqual(Joined(env), "BugGrabber,KeyMode")
+        T.AssertEqual(Joined(env), "!BugGrabber,KeyMode")
         T.AssertEqual(env.KeyModeDB.protected.bugsack, nil, "no stray lower-case key")
     end)
 
@@ -96,7 +96,7 @@ return function(stub, T)
         env.ns.Profiles:Unprotect("BugSack")
         local again = Reboot(env)
         T.AssertFalse(again.ns.Profiles:IsProtected("BugSack"), "defaults did not refill it")
-        T.AssertEqual(Joined(again), "BugGrabber,KeyMode")
+        T.AssertEqual(Joined(again), "!BugGrabber,KeyMode")
     end)
 
     T.Test("an added addon survives the next login", function()
@@ -111,7 +111,7 @@ return function(stub, T)
         Profiles:Unprotect("BugSack")
         T.AssertTrue(Profiles:Protect("bugsack"), "ok")
         T.AssertEqual(env.KeyModeDB.protected.BugSack, true, "existing entry reused")
-        T.AssertEqual(Joined(env), "BugGrabber,BugSack,KeyMode", "one spelling")
+        T.AssertEqual(Joined(env), "!BugGrabber,BugSack,KeyMode", "one spelling")
     end)
 
     T.Test("/km reset keeps the protect list", function()
@@ -119,7 +119,7 @@ return function(stub, T)
         env.ns.Profiles:Unprotect("BugSack")
         env.ns.Profiles:Protect("Details")
         stub.Slash(env, "/km reset")
-        T.AssertEqual(Joined(env), "BugGrabber,Details,KeyMode")
+        T.AssertEqual(Joined(env), "!BugGrabber,Details,KeyMode")
     end)
 
     T.Test("before ADDON_LOADED only KeyMode is protected, and edits are refused", function()

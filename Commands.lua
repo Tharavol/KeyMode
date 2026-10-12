@@ -18,21 +18,13 @@ local function OpenPanel() ns.Options:Open() end
 
 local function Joined(names) return table.concat(names, ", ") end
 
--- Switches, or says why not. On a switch with changes the UI reloads inside Apply.
-local function SwitchTo(mode)
-    local _, message = ns.Switch:Apply(mode)
-    if message then ns.Print(message) end
-end
-
--- Instance <-> World; from Off, Instance, the mode KeyMode exists for.
-local function Toggled()
-    return ns.Switch:Mode() == "instance" and "world" or "instance"
-end
+-- Every switch goes through the preview dialog (#17), which switches only on Confirm.
+local function SwitchTo(mode) ns.UI:Preview(mode) end
 
 -- `/km preview [instance|world|off]`: the plan as text, changing nothing. Bare previews
 -- what `/km toggle` would do.
 local function Preview(rest)
-    local mode = rest ~= "" and rest or Toggled()
+    local mode = rest ~= "" and rest or ns.Switch:ToggleTarget()
     if not ns.Switch.MODES[mode] then
         ns.Print("'" .. rest .. "' - expected 'instance', 'world' or 'off'.")
         return
@@ -111,9 +103,20 @@ local function ListCommand(argument)
     elseif verb == "remove" then
         local ok, err = ns.Profiles:ListRemove(which, name)
         Report(ok, err, name .. " removed from the " .. label .. ".", name)
+    elseif verb == "clear" then
+        ns.Print(ns.Editor:Clear(which) .. " removed from the " .. label .. ".")
+    elseif verb == "copy" then
+        local from = name:lower()
+        if not ns.Profiles:IsList(from) or from == which then
+            ns.Print("'" .. name .. "' - expected the other list's name.")
+            return
+        end
+        ns.Print(ns.Editor:Copy(from, which) .. " added to the " .. label .. " from the "
+            .. ns.Switch.MODES[from] .. " list.")
     else
-        ns.Print("'" .. verb .. "' - expected 'add' or 'remove'.")
+        ns.Print("'" .. verb .. "' - expected 'add', 'remove', 'clear' or 'copy'.")
     end
+    if ns.Editor.page and ns.Editor.page:IsShown() then ns.Editor:Refresh() end
 end
 
 -- `/km protect [add|remove <addon>]`.
@@ -166,12 +169,12 @@ local COMMANDS = {
     { name = "gui", help = {}, handler = OpenPanel },
     {
         name = "instance",
-        help = { Cmd("/km instance") .. " - turn off the Instance list and reload" },
+        help = { Cmd("/km instance") .. " - preview turning off the Instance list, then confirm" },
         handler = function() SwitchTo("instance") end,
     },
     {
         name = "world",
-        help = { Cmd("/km world") .. " - turn off the World list and reload" },
+        help = { Cmd("/km world") .. " - preview turning off the World list, then confirm" },
         handler = function() SwitchTo("world") end,
     },
     {
@@ -182,7 +185,7 @@ local COMMANDS = {
     {
         name = "toggle",
         help = { Cmd("/km toggle") .. " - switch between Instance and World mode" },
-        handler = function() SwitchTo(Toggled()) end,
+        handler = function() SwitchTo(ns.Switch:ToggleTarget()) end,
     },
     {
         name = "preview",
@@ -191,8 +194,18 @@ local COMMANDS = {
     },
     {
         name = "list",
-        help = { Cmd("/km list [instance|world] [add|remove <addon>]") .. " - show or edit a list" },
+        help = { Cmd("/km list [instance|world] [add|remove <addon>|clear|copy <other>]") .. " - show or edit a list" },
         handler = function(argument) ListCommand(argument) end,
+    },
+    {
+        name = "export",
+        help = { Cmd("/km export") .. " - copy both lists as text, for backup or another account" },
+        handler = function() ns.Editor:ShowExport() end,
+    },
+    {
+        name = "import",
+        help = { Cmd("/km import") .. " - paste exported lists; shows the changes before applying" },
+        handler = function() ns.Editor:ShowImport() end,
     },
     {
         name = "protect",
@@ -237,7 +250,7 @@ local COMMANDS = {
         name = "debug",
         help = {
             Cmd("/km debug [on|off]") .. " - toggle or set debug messages",
-            Cmd("/km debug probe [scan|inventory|enable|disable|save|reset|clear]")
+            Cmd("/km debug probe [scan|inventory|categories|enable|disable|save|reset|clear]")
                 .. " - addon API diagnostics (see docs/HANDOFF.md)",
         },
         handler = function(argument, rest)

@@ -56,9 +56,22 @@ function ns.GetAddonVersion()
     return version
 end
 
+-- CreateFrame raises immediately if a template doesn't resolve on the running client,
+-- which would abort the rest of the calling file. Blizzard periodically retires UI
+-- templates (Crosshairs #53), so every candidate is tried in order and an untemplated
+-- frame is the last resort rather than an error. Returns the frame and the template
+-- that resolved, or nil when none did. `name` is optional (a global frame name).
+function ns.CreateFrameWithFallback(frameType, parent, templates, name)
+    for _, template in ipairs(templates) do
+        local ok, frame = pcall(CreateFrame, frameType, name, parent, template)
+        if ok and frame then return frame, template end
+    end
+    return CreateFrame(frameType, name, parent), nil
+end
+
 -- Schema version for KeyModeDB. Bump it, and add a migration, whenever the shape of a
 -- saved table changes; never reinterpret an old shape in place.
-ns.DB_VERSION = 2
+ns.DB_VERSION = 3
 
 ns.defaults = {
     dbVersion = ns.DB_VERSION,
@@ -79,7 +92,7 @@ ns.defaults = {
     -- every nil key at login and would quietly put a removed default back. KeyMode itself
     -- is protected in code (Profiles.lua) and needs no entry here. (#9)
     protected = {
-        BugGrabber = true,
+        ["!BugGrabber"] = true, -- the folder name has the "!"; "BugGrabber" never matched (#9)
         BugSack = true,
     },
     settings = {
@@ -136,6 +149,15 @@ local MIGRATIONS = {
     -- v0.1.0 and v0.2.0 shipped an always-empty `profiles` table, replaced by `lists`
     -- (#37). Nothing could fill it, so there is nothing to carry over.
     [2] = function(db) db.profiles = nil end,
+    -- The default protect entry was "BugGrabber", but the addon's folder is "!BugGrabber",
+    -- so it never matched (found in the v0.4.0 in-game check). The saved entry moves to
+    -- the real name, keeping its value: a removed default stays removed (false).
+    [3] = function(db)
+        local protected = db.protected
+        if type(protected) ~= "table" or protected.BugGrabber == nil then return end
+        if protected["!BugGrabber"] == nil then protected["!BugGrabber"] = protected.BugGrabber end
+        protected.BugGrabber = nil
+    end,
 }
 
 -- Brings a saved DB up to DB_VERSION. An empty table is a first login with nothing to
