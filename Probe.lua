@@ -19,6 +19,20 @@ ns.Probe = Probe
 
 Probe.TARGET = "KeyModeProbe"
 
+-- Every probe line also goes to KeyModeDB.probeLog, account-wide, so a session spanning
+-- several characters, reloads and logouts can be read back from
+-- WTF\Account\<ACCOUNT>\SavedVariables\KeyMode.lua instead of retyped from chat.
+-- Capped so a forgotten log cannot grow without bound; `/km debug probe clear` empties it.
+local LOG_LIMIT = 2000
+local function Out(text)
+    ns.Print(text)
+    if not ns.db then return end
+    local log = ns.db.probeLog or {}
+    ns.db.probeLog = log
+    log[#log + 1] = text
+    while #log > LOG_LIMIT do table.remove(log, 1) end
+end
+
 -- Every value worth trying as the `character` argument, in a fixed order so successive
 -- reports line up. nil is "all characters" in Blizzard's AddOn list.
 local function CharacterKeys()
@@ -72,12 +86,12 @@ end
 function Probe:Report(name)
     local index, folder = Installed(name)
     if not index then
-        ns.Print("Probe: '" .. name .. "' is not installed.")
+        Out("Probe: '" .. name .. "' is not installed.")
         return
     end
     local _, title, _, loadable, reason, security = C_AddOns.GetAddOnInfo(index)
-    ns.Print("Probe: " .. folder .. " (#" .. index .. ", title '" .. tostring(title) .. "')")
-    ns.Print("  loadable " .. tostring(loadable) .. ", reason " .. tostring(reason)
+    Out("Probe: " .. folder .. " (#" .. index .. ", title '" .. tostring(title) .. "')")
+    Out("  loadable " .. tostring(loadable) .. ", reason " .. tostring(reason)
         .. ", security " .. tostring(security) .. ", loaded " .. tostring(C_AddOns.IsAddOnLoaded(index))
         .. ", LoD " .. tostring(C_AddOns.IsAddOnLoadOnDemand(index)))
     local states = {}
@@ -88,11 +102,11 @@ function Probe:Report(name)
             states[#states + 1] = key.label .. "=" .. tostring(Try(C_AddOns.GetAddOnEnableState, folder, key.value))
         end
     end
-    ns.Print("  enable state (0 None, 1 Some, 2 All): " .. table.concat(states, " "))
-    ns.Print("  by index, guid: " .. tostring(Try(C_AddOns.GetAddOnEnableState, index, UnitGUID("player"))))
-    ns.Print("  deps (as returned): " .. Joined(C_AddOns.GetAddOnDependencies(index)))
-    ns.Print("  optional deps: " .. Joined(C_AddOns.GetAddOnOptionalDependencies(index)))
-    ns.Print("  guid " .. tostring(UnitGUID("player")) .. ", full name "
+    Out("  enable state (0 None, 1 Some, 2 All): " .. table.concat(states, " "))
+    Out("  by index, guid: " .. tostring(Try(C_AddOns.GetAddOnEnableState, index, UnitGUID("player"))))
+    Out("  deps (as returned): " .. Joined(C_AddOns.GetAddOnDependencies(index)))
+    Out("  optional deps: " .. Joined(C_AddOns.GetAddOnOptionalDependencies(index)))
+    Out("  guid " .. tostring(UnitGUID("player")) .. ", full name "
         .. tostring((FindKey("full") or {}).value))
 end
 
@@ -101,20 +115,20 @@ end
 function Probe:Set(enable, label)
     local key = FindKey(label or "")
     if not key then
-        ns.Print("Probe: expected a character key: " .. KeyLabels() .. ".")
+        Out("Probe: expected a character key: " .. KeyLabels() .. ".")
         return
     end
     if key.needsRealm and key.value == nil then
-        ns.Print("Probe: no realm name available for 'full'.")
+        Out("Probe: no realm name available for 'full'.")
         return
     end
     if not Installed(Probe.TARGET) then
-        ns.Print("Probe: install tests/fixtures/" .. Probe.TARGET .. " first.")
+        Out("Probe: install tests/fixtures/" .. Probe.TARGET .. " first.")
         return
     end
     local fn = enable and C_AddOns.EnableAddOn or C_AddOns.DisableAddOn
     local ok, err = pcall(fn, Probe.TARGET, key.value)
-    ns.Print("Probe: " .. (enable and "EnableAddOn" or "DisableAddOn") .. "(" .. Probe.TARGET .. ", "
+    Out("Probe: " .. (enable and "EnableAddOn" or "DisableAddOn") .. "(" .. Probe.TARGET .. ", "
         .. label .. ") " .. (ok and "returned" or ("raised: " .. tostring(err))))
     self:Report(Probe.TARGET)
 end
@@ -147,17 +161,17 @@ function Probe:Scan()
         if category and category ~= "" then categories = categories + 1 end
     end
 
-    ns.Print("Probe scan: " .. count .. " addons installed.")
+    Out("Probe scan: " .. count .. " addons installed.")
     local tallies = {}
     for reason, n in pairs(reasons) do tallies[#tallies + 1] = reason .. "=" .. n end
     table.sort(tallies)
-    ns.Print("  reasons: " .. table.concat(tallies, ", "))
-    ns.Print("  dependency names differing in case from the folder: " .. #caseMismatches)
-    for i = 1, math.min(#caseMismatches, 10) do ns.Print("    " .. caseMismatches[i]) end
-    ns.Print("  dependencies not installed: " .. #missing)
-    for i = 1, math.min(#missing, 10) do ns.Print("    " .. missing[i]) end
-    ns.Print("  addons with ## Category metadata: " .. categories)
-    ns.Print("  APIs: IsEncounterInProgress " .. tostring(IsEncounterInProgress ~= nil)
+    Out("  reasons: " .. table.concat(tallies, ", "))
+    Out("  dependency names differing in case from the folder: " .. #caseMismatches)
+    for i = 1, math.min(#caseMismatches, 10) do Out("    " .. caseMismatches[i]) end
+    Out("  dependencies not installed: " .. #missing)
+    for i = 1, math.min(#missing, 10) do Out("    " .. missing[i]) end
+    Out("  addons with ## Category metadata: " .. categories)
+    Out("  APIs: IsEncounterInProgress " .. tostring(IsEncounterInProgress ~= nil)
         .. ", C_ChallengeMode.IsChallengeModeActive "
         .. tostring(C_ChallengeMode ~= nil and C_ChallengeMode.IsChallengeModeActive ~= nil)
         .. ", UnitFullName " .. tostring(UnitFullName ~= nil))
@@ -167,16 +181,23 @@ end
 function Probe:Run(argument)
     local sub, rest = (argument or ""):match("^(%S*)%s*(.-)$")
     local lower = sub:lower()
+    local name, realm = UnitName("player"), UnitFullName and select(2, UnitFullName("player"))
+    if lower == "clear" then
+        if ns.db then ns.db.probeLog = nil end
+        ns.Print("Probe: log cleared.")
+        return
+    end
+    Out("---- " .. tostring(name) .. "-" .. tostring(realm) .. ": /km debug probe " .. (argument or ""))
     if lower == "" then
         self:Report(Probe.TARGET)
     elseif lower == "enable" or lower == "disable" then
         self:Set(lower == "enable", rest:lower())
     elseif lower == "save" then
         C_AddOns.SaveAddOns()
-        ns.Print("Probe: SaveAddOns() called. /reload, then /km debug probe.")
+        Out("Probe: SaveAddOns() called. /reload, then /km debug probe.")
     elseif lower == "reset" then
         C_AddOns.ResetAddOns()
-        ns.Print("Probe: ResetAddOns() called.")
+        Out("Probe: ResetAddOns() called.")
         self:Report(Probe.TARGET)
     elseif lower == "scan" then
         self:Scan()
@@ -184,3 +205,17 @@ function Probe:Run(argument)
         self:Report(sub)
     end
 end
+
+-- While a probe session is open (the log is non-empty), every login and reload records
+-- whether the fixture actually loaded and its state under every key, so "did the change
+-- take effect" is answered on the next character or after the next /reload without
+-- typing anything. PLAYER_LOGIN fires after every addon has loaded, the fixture included.
+local loginFrame = CreateFrame("Frame")
+loginFrame:RegisterEvent("PLAYER_LOGIN")
+loginFrame:SetScript("OnEvent", function()
+    if not (ns.db and ns.db.probeLog and #ns.db.probeLog > 0) then return end
+    local name, realm = UnitName("player"), UnitFullName and select(2, UnitFullName("player"))
+    Out("---- " .. tostring(name) .. "-" .. tostring(realm) .. ": login or reload; "
+        .. Probe.TARGET .. " loaded = " .. tostring(C_AddOns.IsAddOnLoaded(Probe.TARGET)))
+    Probe:Report(Probe.TARGET)
+end)

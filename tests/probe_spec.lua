@@ -99,6 +99,29 @@ return function(stub, T)
         T.AssertTrue(Has(lines, "IsEncounterInProgress true"), "API presence reported")
     end)
 
+    T.Test("probe output is kept in KeyModeDB.probeLog until cleared", function()
+        local env = Boot(true)
+        stub.Slash(env, "/km debug probe")
+        local log = env.ns.db.probeLog
+        T.AssertTrue(log and log[1]:find("Testchar", 1, true), "header names the character")
+        T.AssertTrue(log[1]:find("/km debug probe", 1, true), "and the command")
+        T.AssertTrue(#log > 3, "report lines logged")
+        stub.Slash(env, "/km debug probe clear")
+        T.AssertEqual(env.ns.db.probeLog, nil, "cleared")
+    end)
+
+    T.Test("a login during a probe session logs whether the fixture loaded", function()
+        local env = Boot(true)
+        stub.Fire(env, "PLAYER_LOGIN")
+        T.AssertEqual(env.ns.db.probeLog, nil, "no session, nothing logged")
+        stub.Slash(env, "/km debug probe")
+        local before = #env.ns.db.probeLog
+        stub.Fire(env, "PLAYER_LOGIN")
+        local log = env.ns.db.probeLog
+        T.AssertTrue(#log > before, "logged")
+        T.AssertTrue(log[before + 1]:find("KeyModeProbe loaded = false", 1, true), "load result")
+    end)
+
     T.Test("debug on/off still toggles", function()
         local env = Boot(false)
         stub.Slash(env, "/km debug on")

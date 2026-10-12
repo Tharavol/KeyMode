@@ -91,6 +91,10 @@ the `KeyModeProbe` fixture. Setup: copy `tests/fixtures/KeyModeProbe` into
    must still load there.
 7. Disable by `all` and save; check B and C again, then restore.
 
+Every probe line, plus an automatic report at each login or reload while the log is
+non-empty, is kept in `KeyModeDB.probeLog` (`WTF\Account\<ACCOUNT>\SavedVariables\KeyMode.lua`,
+written at logout or reload). `/km debug probe clear` empties it.
+
 Results go in the "API facts" table above (and the stub's character-key model is
 corrected to match) before #7 builds on them.
 
