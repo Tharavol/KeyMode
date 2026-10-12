@@ -22,9 +22,10 @@ ns.Inventory = Inventory
 --------------------------------------------------------------------------
 
 -- Returns a list of records in the client's addon order:
---   { index, name, title, loadable, reason, loadOnDemand, loaded, enabled,
+--   { index, name, title, category, loadable, reason, loadOnDemand, loaded, enabled,
 --     deps = {...}, optionalDeps = {...} }
 -- `reason` is nil when the client has nothing to report (it answers "" for that).
+-- `category` is the TOC's `## Category` (#21), nil when the TOC sets none or an empty one.
 -- `deps` and `optionalDeps` are spelled as each TOC wrote them; BuildGraph matches
 -- them to folder names case-insensitively.
 function Inventory:Scan()
@@ -34,10 +35,12 @@ function Inventory:Scan()
     for index = 1, C_AddOns.GetNumAddOns() do
         local name, title, _, loadable, reason = C_AddOns.GetAddOnInfo(index)
         if name then
+            local category = C_AddOns.GetAddOnMetadata(index, "Category")
             records[#records + 1] = {
                 index = index,
                 name = name,
                 title = title or name,
+                category = category ~= "" and category or nil,
                 loadable = loadable and true or false,
                 reason = reason ~= "" and reason or nil,
                 loadOnDemand = C_AddOns.IsAddOnLoadOnDemand(index) and true or false,
