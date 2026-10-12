@@ -45,17 +45,28 @@ return function(stub, T)
         T.AssertEqual(reason, "MISSING")
     end)
 
-    T.Test("per-character enable state is independent per key", function()
+    T.Test("GUID and name address the same character (#6)", function()
         local env = Setup()
         local api, state = env.C_AddOns, env.Enum.AddOnEnableState
-        local guid = env.UnitGUID("player")
+        local guid, name = env.UnitGUID("player"), env.UnitName("player")
         T.AssertEqual(api.GetAddOnEnableState("Altoholic", guid), state.All, "enabled by default")
         T.AssertEqual(api.GetAddOnEnableState("OffHere", guid), state.None, "enabled = false")
-        api.DisableAddOn("Altoholic", guid)
-        T.AssertEqual(api.GetAddOnEnableState("Altoholic", guid), state.None, "disabled by GUID")
-        T.AssertEqual(api.GetAddOnEnableState("Altoholic", env.UnitName("player")), state.All,
-            "name key untouched -- the model treats keys as distinct until #6 says otherwise")
-        T.AssertEqual(api.GetAddOnEnableState("Altoholic"), state.Some, "nil = across characters")
+        api.DisableAddOn("Altoholic", name)
+        T.AssertEqual(api.GetAddOnEnableState("Altoholic", guid), state.None, "disabled by name, read by GUID")
+        api.EnableAddOn("Altoholic", guid)
+        T.AssertEqual(api.GetAddOnEnableState("Altoholic", name), state.All, "enabled by GUID, read by name")
+    end)
+
+    T.Test("a GUID change leaves other characters alone; nil and \"0\" aggregate", function()
+        local other = "Player-5678-0FEDCBA9"
+        local env = stub.Load(function(_, fixtures)
+            stub.AddAddon(fixtures, "Shared", { enabledFor = { [fixtures.player.guid] = true, [other] = true } })
+        end)
+        local api, state = env.C_AddOns, env.Enum.AddOnEnableState
+        api.DisableAddOn("Shared", env.UnitGUID("player"))
+        T.AssertEqual(api.GetAddOnEnableState("Shared", other), state.All, "other character untouched")
+        T.AssertEqual(api.GetAddOnEnableState("Shared"), state.Some, "nil = across characters")
+        T.AssertEqual(api.GetAddOnEnableState("Shared", "0"), state.Some, "\"0\" = nil")
     end)
 
     T.Test("nil character enables and disables for everyone", function()
@@ -65,6 +76,20 @@ return function(stub, T)
         T.AssertEqual(api.GetAddOnEnableState("OffHere"), state.All, "all")
         api.DisableAddOn("OffHere")
         T.AssertEqual(api.GetAddOnEnableState("OffHere"), state.None, "none")
+        T.AssertEqual(select(5, api.GetAddOnInfo("OffHere")), "DISABLED", "reason")
+    end)
+
+    T.Test("an unrecognised key (Name-Realm) reads All and changes nothing", function()
+        local env = Setup()
+        local api, state = env.C_AddOns, env.Enum.AddOnEnableState
+        api.DisableAddOn("Altoholic", "Testchar-Somerealm")
+        T.AssertEqual(api.GetAddOnEnableState("Altoholic", "Testchar-Somerealm"), state.All, "reads All")
+        T.AssertEqual(api.GetAddOnEnableState("Altoholic", env.UnitGUID("player")), state.All, "unchanged")
+    end)
+
+    T.Test("a loaded addon's reason is the empty string, as on the live client", function()
+        local env = Setup()
+        T.AssertEqual(select(5, env.C_AddOns.GetAddOnInfo("DataStore")), "", "not nil")
     end)
 
     T.Test("mutations and saves are recorded in order", function()

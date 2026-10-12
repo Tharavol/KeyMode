@@ -57,6 +57,16 @@ build on the switch engine, so it lands and is verified before any UI goes on to
 
 ## v0.3.0 -- Profiles and the switch engine
 
+> **Superseded in part by #37.** Named profiles are replaced by two fixed lists,
+> Instance (Mythic Keystone dungeons and raids) and World (the rest of the time,
+> empty by default), both applied over the character's baseline snapshot. The
+> bullets below and in v0.4.0-v0.5.0 that mention named profiles are rewritten
+> when #37 is scheduled; #37 lists every affected issue.
+
+- **Two fixed addon sets: Instance and World (#37).** Baseline snapshot; Instance mode
+  = baseline - Instance list (World-list addons come back on); World mode = baseline -
+  World list; off = baseline restored exactly.
+
 - **SavedVariables schema v1.** `KeyModeDB.profiles[name] = { disable = {...} }`,
   `activeProfile`, `snapshots[guid] = { taken, profile, state = {...} }`, a migration
   hook keyed on `dbVersion`.

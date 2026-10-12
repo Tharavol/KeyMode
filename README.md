@@ -7,8 +7,9 @@ one `/reload`.
 
 > **Status: pre-release.** Development is tracked in milestones v0.1.0 through v1.0.0;
 > see [docs/PLAN.md](docs/PLAN.md). v0.1.0: the options panel, the commands, the
-> minimap button and the Addon Compartment entry work; switching itself arrives with
-> v0.3.0.
+> minimap button and the Addon Compartment entry. v0.2.0: the addon inventory,
+> dependency graph, protect list and safe-to-switch guard, with the enable-state API
+> verified in-game. Switching itself arrives with v0.3.0.
 
 Why
 ---
@@ -53,7 +54,7 @@ Tharavol addons.
 - `/km preview [profile]` - list what a switch would change, without reloading *(v0.3.0)*
 - `/km status` - show the current mode and settings
 - `/km version` - show the addon version
-- `/km reset` - restore settings to defaults; profiles and pending restores are kept
+- `/km reset` - restore settings to defaults; profiles, the protect list and pending restores are kept
 - `/km minimap [on|off]` - toggle or set the minimap button
 - `/km debug [on|off]` - toggle or set debug messages
 - `/km help` - list every command

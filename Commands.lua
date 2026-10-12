@@ -85,6 +85,9 @@ local COMMANDS = {
             ns.Print(ADDON_NAME .. " " .. ns.GetAddonVersion() .. " status:")
             ns.Print("  Mode: " .. (ns.Switch:IsActive() and "Mythic+" or "Normal"))
             ns.Print("  Profiles: " .. CountKeys(ns.db.profiles))
+            ns.Print("  Protected: " .. table.concat(ns.Profiles:ProtectedList(), ", "))
+            local canSwitch, reason = ns.Inventory:CanSwitch()
+            ns.Print("  Switch allowed: " .. (canSwitch and "yes" or ("no (" .. reason .. ")")))
             for _, definition in ipairs(ns.Options.CHECKBOXES) do
                 ns.Print("  " .. definition.label .. ": " .. OnOff(ns.db.settings[definition.key]))
             end
@@ -97,7 +100,7 @@ local COMMANDS = {
     },
     {
         name = "reset",
-        help = { Cmd("/km reset") .. " - restore settings to defaults (profiles are kept)" },
+        help = { Cmd("/km reset") .. " - restore settings to defaults (profiles and the protect list are kept)" },
         handler = function()
             ns.ResetSettings()
             ns.Print("Settings restored to defaults.")
@@ -110,8 +113,19 @@ local COMMANDS = {
     },
     {
         name = "debug",
-        help = { Cmd("/km debug [on|off]") .. " - toggle or set debug messages" },
-        handler = function(_, rest) Toggle("debug", rest, "Debug messages") end,
+        help = {
+            Cmd("/km debug [on|off]") .. " - toggle or set debug messages",
+            Cmd("/km debug probe [scan|inventory|enable|disable|save|reset|clear]")
+                .. " - addon API diagnostics (see docs/HANDOFF.md)",
+        },
+        handler = function(argument, rest)
+            local word, probeArgs = argument:match("^(%S+)%s*(.-)$")
+            if word and word:lower() == "probe" then
+                ns.Probe:Run(probeArgs)
+                return
+            end
+            Toggle("debug", rest, "Debug messages")
+        end,
     },
     {
         name = "help",

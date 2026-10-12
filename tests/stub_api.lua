@@ -106,17 +106,22 @@ end
 --     loadable = bool, reason = string|nil, security = "INSECURE"|"SECURE",
 --     enabledFor = { [characterKey] = bool }, loaded = bool }
 --
--- `characterKey` is whatever string the caller passes as the `character` argument.
--- Blizzard's own UI passes UnitGUID("player") in AddonList.lua and UnitName("player")
--- in AddonCompartment.lua, and nil means "all characters". Which of those the live
--- client treats as equivalent is exactly what issue #6 verifies in-game; this model
--- treats every key as distinct and is to be corrected once that is known.
+-- `characterKey` is a character's GUID. The `character` argument resolves the way the
+-- live client was seen to resolve it (#6, docs/HANDOFF.md "API facts"):
+--   UnitGUID("player") or UnitName("player")  -> this character (the two are aliases)
+--   nil or "0"                                -> every known character: a query
+--                                                aggregates to None/Some/All, a
+--                                                mutation applies to all of them
+--   anything else (e.g. "Name-Realm")         -> not a character: a query answers All,
+--                                                a mutation does nothing
+-- "Known" means having an entry for the addon, which is why a brand-new addon's "all"
+-- query reflects only the characters that have one.
 --------------------------------------------------------------------------
 
 local ENABLE_STATE = { None = 0, Some = 1, All = 2 }
 
 -- Adds one installed addon to fixtures. `opts.enabled` is shorthand for "enabled for
--- the default player" (both the GUID and the name, since the client uses both).
+-- the default player".
 function M.AddAddon(fixtures, name, opts)
     opts = opts or {}
     local entry = {
@@ -135,7 +140,6 @@ function M.AddAddon(fixtures, name, opts)
     }
     if opts.enabled ~= false and opts.enabledFor == nil then
         entry.enabledFor[fixtures.player.guid] = true
-        entry.enabledFor[fixtures.player.name] = true
     end
     fixtures.addons[#fixtures.addons + 1] = entry
     return entry
@@ -157,8 +161,17 @@ local function KnownCharacters(fixtures)
         for key in pairs(entry.enabledFor) do seen[key] = true end
     end
     seen[fixtures.player.guid] = true
-    seen[fixtures.player.name] = true
     return seen
+end
+
+-- A character GUID, "all" for nil and "0", or nil for a key the client ignores.
+local function ResolveCharacter(fixtures, character)
+    if character == nil or character == "0" then return "all" end
+    if character == fixtures.player.guid or character == fixtures.player.name then
+        return fixtures.player.guid
+    end
+    if type(character) == "string" and character:match("^Player%-") then return character end
+    return nil
 end
 
 local function MakeAddOnsApi(fixtures)
@@ -170,19 +183,23 @@ local function MakeAddOnsApi(fixtures)
     function api.GetAddOnInfo(nameOrIndex)
         local entry = FindAddon(fixtures, nameOrIndex)
         if not entry then return nil end
+        -- The live client answers "" (not nil) for an addon with nothing to report.
         local reason = entry.reason
+        if not reason and not entry.enabledFor[fixtures.player.guid] then reason = "DISABLED" end
         if not reason and entry.loadOnDemand and not entry.loaded then reason = "DEMAND_LOADED" end
-        return entry.name, entry.title, entry.notes, entry.loadable, reason, entry.security
+        return entry.name, entry.title, entry.notes, entry.loadable, reason or "", entry.security
     end
 
     function api.GetAddOnEnableState(nameOrIndex, character)
         local entry = FindAddon(fixtures, nameOrIndex)
         if not entry then return ENABLE_STATE.None end
-        if character ~= nil then
-            return entry.enabledFor[character] and ENABLE_STATE.All or ENABLE_STATE.None
+        local who = ResolveCharacter(fixtures, character)
+        if who == nil then return ENABLE_STATE.All end
+        if who ~= "all" then
+            return entry.enabledFor[who] and ENABLE_STATE.All or ENABLE_STATE.None
         end
         local on, total = 0, 0
-        for key in pairs(KnownCharacters(fixtures)) do
+        for key in pairs(entry.enabledFor) do
             total = total + 1
             if entry.enabledFor[key] then on = on + 1 end
         end
@@ -193,10 +210,12 @@ local function MakeAddOnsApi(fixtures)
     local function SetEnabled(nameOrIndex, character, value)
         local entry = FindAddon(fixtures, nameOrIndex)
         if not entry then return end
-        if character ~= nil then
-            entry.enabledFor[character] = value or nil
+        local who = ResolveCharacter(fixtures, character)
+        if who == nil then return end
+        if who ~= "all" then
+            entry.enabledFor[who] = value
         else
-            for key in pairs(KnownCharacters(fixtures)) do entry.enabledFor[key] = value or nil end
+            for key in pairs(KnownCharacters(fixtures)) do entry.enabledFor[key] = value end
         end
     end
 
@@ -256,6 +275,8 @@ local function MakeFixtures()
         settingsOpened = {}, -- category IDs passed to Settings.OpenToCategory
         reloads = 0,
         inCombat = false,
+        challengeModeActive = false, -- C_ChallengeMode.IsChallengeModeActive
+        encounterInProgress = false, -- IsEncounterInProgress
         cursor = { x = 0, y = 0 },  -- GetCursorPosition, in screen pixels
         minimapShape = nil,         -- GetMinimapShape is only defined when this is set
     }
@@ -325,6 +346,13 @@ function M.Load(configure)
     env.UnitGUID = function(unit) return unit == "player" and fixtures.player.guid or nil end
     env.UnitName = function(unit) return unit == "player" and fixtures.player.name or nil end
     env.InCombatLockdown = function() return fixtures.inCombat end
+    -- The safe-to-switch guard's inputs. A test models a client that lacks one by setting
+    -- it to nil, in `configure` or afterwards (`env.IsEncounterInProgress = nil`); the
+    -- lookup then falls through to the host _G, which has no WoW globals.
+    env.C_ChallengeMode = {
+        IsChallengeModeActive = function() return fixtures.challengeModeActive end,
+    }
+    env.IsEncounterInProgress = function() return fixtures.encounterInProgress end
     env.ReloadUI = function() fixtures.reloads = fixtures.reloads + 1 end
 
     env.SlashCmdList = {}

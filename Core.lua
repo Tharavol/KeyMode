@@ -66,6 +66,14 @@ ns.defaults = {
     profiles = {},
     -- Keyed by UnitGUID("player"): the pre-switch enable state to restore. (v0.3.0)
     snapshots = {},
+    -- Account-wide: addon name -> true (protected) or false (a default the player
+    -- removed). A removal is stored as false, never nil, because ApplyDefaults refills
+    -- every nil key at login and would quietly put a removed default back. KeyMode itself
+    -- is protected in code (Profiles.lua) and needs no entry here. (#9)
+    protected = {
+        BugGrabber = true,
+        BugSack = true,
+    },
     settings = {
         debug = false,
         minimapButton = true,  -- shown by default (#34)
@@ -92,9 +100,10 @@ end
 ns.ApplyDefaults = ApplyDefaults
 
 -- Restores `settings` to defaults, and nothing else (S9 of the slash command standard):
--- profiles and pending snapshots are the player's data, not settings, and a reset that
--- dropped a snapshot would strand a character in M+ mode with no way back. Shared by
--- `/km reset` and the options panel's button so the two cannot drift apart.
+-- profiles, the protect list and pending snapshots are the player's data, not settings,
+-- and a reset that dropped a snapshot would strand a character in M+ mode with no way
+-- back. Shared by `/km reset` and the options panel's button so the two cannot drift
+-- apart.
 function ns.ResetSettings()
     ns.db.settings = {}
     ApplyDefaults(ns.db.settings, ns.defaults.settings)
