@@ -45,7 +45,8 @@ return function(stub, T)
 
     T.Test("every module table is exported on ns", function()
         local env = stub.Load()
-        for _, name in ipairs({ "Inventory", "Profiles", "Plan", "Switch", "Triggers", "UI", "Options", "Commands" }) do
+        local modules = { "Inventory", "Profiles", "Plan", "Share", "Switch", "Triggers", "UI", "Options", "Commands" }
+        for _, name in ipairs(modules) do
             T.AssertEqual(type(env.ns[name]), "table", name)
         end
     end)
