@@ -296,6 +296,12 @@ local function MakeFixtures()
         inInstance = false,          -- IsInInstance
         inGroup = false,             -- IsInGroup
         region = 1,                  -- GetCurrentRegion: 1 US, 2 KR, 3 EU, 4 TW, 5 CN
+        -- GetInstanceInfo: { name, instanceType, difficultyID, instanceID }; the open world
+        -- answers instanceType "none" (switch prompts, #22, #24)
+        instance = { name = "Dornogal", instanceType = "none", difficultyID = 0, instanceID = 2552 },
+        -- C_LFGList (#23): activities[id] = GetActivityInfoTable result,
+        -- searchResults[id] = { activityIDs }, activeEntry = { activityIDs } or nil
+        lfg = { activities = {}, searchResults = {}, activeEntry = nil },
         cursor = { x = 0, y = 0 },  -- GetCursorPosition, in screen pixels
         minimapShape = nil,         -- GetMinimapShape is only defined when this is set
     }
@@ -378,6 +384,15 @@ function M.Load(configure, fixtures)
     env.IsInInstance = function() return fixtures.inInstance end
     env.IsInGroup = function() return fixtures.inGroup end
     env.GetCurrentRegion = function() return fixtures.region end
+    env.GetInstanceInfo = function()
+        local i = fixtures.instance
+        return i.name, i.instanceType, i.difficultyID, "", 5, 0, false, i.instanceID
+    end
+    env.C_LFGList = {
+        GetActivityInfoTable = function(id) return fixtures.lfg.activities[id] end,
+        GetSearchResultInfo = function(id) return fixtures.lfg.searchResults[id] end,
+        GetActiveEntryInfo = function() return fixtures.lfg.activeEntry end,
+    }
     env.time = os.time
 
     env.SlashCmdList = {}

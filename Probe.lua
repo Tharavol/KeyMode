@@ -231,6 +231,48 @@ function Probe:Categories()
     for _, category in ipairs(names) do Out("  " .. tally[category] .. "  " .. category) end
 end
 
+-- One Group Finder activity's fields the switch prompts read (#23).
+local function ActivityLine(id)
+    local ok, info = pcall(C_LFGList.GetActivityInfoTable, id)
+    if not (ok and type(info) == "table") then return "  activity " .. tostring(id) .. ": no answer" end
+    return "  activity " .. tostring(id) .. ": " .. tostring(info.fullName) .. ", categoryID "
+        .. tostring(info.categoryID) .. ", difficultyID " .. tostring(info.difficultyID)
+        .. ", isMythicPlusActivity " .. tostring(info.isMythicPlusActivity)
+        .. ", isCurrentRaidActivity " .. tostring(info.isCurrentRaidActivity)
+end
+
+-- `/km debug probe lfg`: what the switch prompts see here and now (#22, #23, #24) --
+-- GetInstanceInfo, the group, our own listing and the last group joined through the
+-- Group Finder -- so the difficulty and category numbers can be checked in-game.
+function Probe:Lfg()
+    if type(GetInstanceInfo) == "function" then
+        local instanceName, instanceType, difficultyID, difficultyName, _, _, _, instanceID = GetInstanceInfo()
+        Out("Instance: " .. tostring(instanceName) .. ", type " .. tostring(instanceType) .. ", difficultyID "
+            .. tostring(difficultyID) .. " (" .. tostring(difficultyName) .. "), instanceID " .. tostring(instanceID))
+    end
+    Out("In a group: " .. tostring(type(IsInGroup) == "function" and IsInGroup() or false)
+        .. "; key completed since entering: " .. tostring(ns.Triggers.state.keyDone))
+    if type(C_LFGList) ~= "table" then
+        Out("C_LFGList: missing")
+        return
+    end
+    local ok, entry = pcall(C_LFGList.GetActiveEntryInfo)
+    if ok and type(entry) == "table" then
+        Out("Own listing:")
+        for _, id in ipairs(entry.activityIDs or {}) do Out(ActivityLine(id)) end
+    else
+        Out("Own listing: none")
+    end
+    local joined = ns.Triggers.state.lastJoined
+    local okJoined, result = pcall(C_LFGList.GetSearchResultInfo, joined or 0)
+    if joined and okJoined and type(result) == "table" then
+        Out("Last group joined (search result " .. tostring(joined) .. "):")
+        for _, id in ipairs(result.activityIDs or {}) do Out(ActivityLine(id)) end
+    else
+        Out("Last group joined: none this session")
+    end
+end
+
 -- `argument` keeps the player's case, since an addon name to report on can be typed.
 function Probe:Run(argument)
     local sub, rest = (argument or ""):match("^(%S*)%s*(.-)$")
@@ -259,6 +301,8 @@ function Probe:Run(argument)
         self:Inventory(rest)
     elseif lower == "categories" then
         self:Categories()
+    elseif lower == "lfg" then
+        self:Lfg()
     else
         self:Report(sub)
     end

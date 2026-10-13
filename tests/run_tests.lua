@@ -25,5 +25,6 @@ dofile("tests/suggest_spec.lua")(stub, T)
 dofile("tests/inventory_spec.lua")(stub, T)
 dofile("tests/switch_spec.lua")(stub, T)
 dofile("tests/editor_spec.lua")(stub, T)
+dofile("tests/triggers_spec.lua")(stub, T)
 
 os.exit(T.Summary() and 0 or 1)

@@ -10,8 +10,8 @@ one `/reload`.
 > minimap button and the Addon Compartment entry. v0.2.0: the addon inventory,
 > dependency graph, protect list and safe-to-switch guard, with the enable-state API
 > verified in-game. v0.3.0: Instance and World modes and the switch engine. v0.4.0: the
-> preview dialog, the list editor, import/export and suggested lists. Prompts arrive
-> with v0.5.0.
+> preview dialog, the list editor, import/export and suggested lists. v0.5.0: the
+> switch prompts and the key binding.
 
 Why
 ---
@@ -36,9 +36,11 @@ Features (planned for 1.0)
   required dependencies with it. No "missing dependency" errors after a switch.
 - **Preview before reload.** A dialog lists what will be turned off and on, and the
   reload happens only on confirmation.
-- **Prompt on arrival.** Optionally offers to switch on entering a Mythic dungeon or a
-  raid, or joining a keystone group, and to switch back on leaving. Never prompts in combat or
-  during an active keystone, and never switches without a click.
+- **Prompts.** Offers Instance mode on entering a raid (LFR included) or a Mythic
+  dungeon in a group, or on joining or listing a Mythic+ or raid group, and World mode on
+  leaving afterwards. Each prompt is the preview dialog: nothing switches without
+  Confirm and Reload. Never in combat (shown when combat ends) or during an active key;
+  "Not now" silences that prompt until the next reload, and each can be turned off.
 - **Entry points.** `/keymode` (alias `/km`), a minimap button, an Addon Compartment
   entry, and a key binding.
 
@@ -63,6 +65,7 @@ Tharavol addons.
 - `/km export` - copy both lists as text, for backup or another account
 - `/km import` - paste exported lists; shows the changes before applying
 - `/km protect [add|remove <addon>]` - show or edit the addons no switch turns off
+- `/km prompts [arrival|group|departure] [on|off]` - show, toggle or set the switch prompts
 - `/km status` - show the current mode, list sizes and settings
 - `/km version` - show the addon version
 - `/km reset` - restore settings to defaults; the lists, the protect list and the mode are kept
@@ -72,7 +75,8 @@ Tharavol addons.
 
 The minimap button and the Addon Compartment entry (the addon button by the minimap)
 do the same thing: left-click opens the preview dialog for a toggle, right-click opens
-the options panel. The lists are edited under Options > AddOns > KeyMode > Lists, which
+the options panel. The key binding (Key Bindings > AddOns > KeyMode) does the same as
+the left click. The lists are edited under Options > AddOns > KeyMode > Lists, which
 also has Suggest, Import and Export. Drag
 the minimap button around the minimap edge to move it; minimap-button bars such as
 HidingBar can collect it.

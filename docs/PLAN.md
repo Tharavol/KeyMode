@@ -101,15 +101,16 @@ The milestone and issue titles keep their original names.
 ## v0.5.0 -- Triggers and entry points
 
 - **Arrival prompt (#22).** On entering a raid (any difficulty) or a Mythic dungeon
-  (difficulty 23) outside Instance mode, offer the switch through the preview dialog.
-  Normal and Heroic dungeons do not trigger it.
+  (difficulty 23) in a group, outside Instance mode, offer the switch through the
+  preview dialog. Normal and Heroic dungeons, and solo visits, do not trigger it.
 - **Group prompt (#23).** On joining a premade group listed as a Mythic+ or raid
   activity, or listing one's own key or raid, offer Instance mode.
 - **Departure prompt (#24).** In Instance mode, after `CHALLENGE_MODE_COMPLETED` and
   leaving the instance, after leaving a raid, or on leaving the group, offer World mode.
-- **Prompt rules (#25).** Never in combat or during an active key; "not now" snoozes for
-  the session; each trigger has its own toggle in options.
-- **Key binding.** `Bindings.xml` toggle binding. (The minimap button moved to v0.1.0.)
+- **Prompt rules (#25).** Never in combat (deferred to its end) or during an active key;
+  "not now" snoozes until the next reload; each trigger has its own toggle in options and
+  `/km prompts`. `/km debug trigger` shows a simulated prompt.
+- **Key binding (#26).** `Bindings.xml` toggle binding. (The minimap button moved to v0.1.0.)
 
 ## v1.0.0 -- Polish pass and stable release
 
