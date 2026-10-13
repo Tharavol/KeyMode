@@ -13,7 +13,7 @@ management.
 ## Current state
 
 - v0.1.0 to v0.4.0 released as pre-releases. v0.5.0 (#22-#26) is complete on
-  `milestone/v0.5.0`, awaiting its in-game check and release. Files, in TOC load
+  `milestone/v0.5.0` and passed its in-game check, awaiting release. Files, in TOC load
   order (plus `Bindings.xml`, which the client loads from the folder by itself):
   - `Core.lua` -- namespace, `ns.Print`, `ns.Debug`, `ns.GetAddonVersion`, SavedVariables
     defaults (schema v3: `lists`, `snapshots`, `protected`, `settings`, with
@@ -153,8 +153,16 @@ v0.4.0 UI was written. Source only: none of these has been tried in-game yet.
 ### Switch prompts for v0.5.0
 
 Checked against `Gethe/wow-ui-source` branch `live` (12.1.0) before the prompts were
-written. Source only until the v0.5.0 in-game check; `/km debug probe lfg` prints the
-values below in-game.
+written, then in-game in the v0.5.0 check with `/km debug probe lfg`:
+
+- LFR (The Venomous Abyss) reports instance type `raid`, difficultyID 17, in a group.
+- A listed Mythic raid: activity 1957, `categoryID 3`, difficultyID 16,
+  `isCurrentRaidActivity true`.
+- A listed keystone: activity 1176, `categoryID 2`, difficultyID 8,
+  `isMythicPlusActivity true`.
+- Listing a group alone already makes `IsInGroup()` true.
+- Leaving LFR fired the group-left departure ("Left the group.") before the open-world
+  one.
 
 | Fact | Where it is defined |
 | --- | --- |
@@ -162,7 +170,7 @@ values below in-game.
 | Search results and one's own listing carry `activityIDs`, a table (no single `activityID`) | same, `LfgSearchResultData`, `LfgEntryData` |
 | `GetActivityInfoTable(id)` answers `fullName`, `categoryID`, `difficultyID`, `isMythicPlusActivity`, `isCurrentRaidActivity` | same, `GroupFinderActivityInfo` |
 | `GetActiveEntryInfo` is `SecretInChatMessagingLockdown`; the activity lookups take `SecretArguments`. KeyMode pcalls each and reads a refusal as "no prompt" | same |
-| `GROUP_FINDER_CATEGORY_ID_DUNGEONS = 2`; Blizzard names no Raids constant. KeyMode uses 3, to be confirmed in-game | `Blizzard_GroupFinder/Mainline/LFGList.lua` |
+| `GROUP_FINDER_CATEGORY_ID_DUNGEONS = 2`; Blizzard names no Raids constant. KeyMode uses 3, confirmed in-game | `Blizzard_GroupFinder/Mainline/LFGList.lua` |
 | `GROUP_JOINED(category, partyGUID)`, `GROUP_LEFT(category, partyGUID)`, per group category (home, instance) | `PartyInfoDocumentation.lua` |
 | `CHALLENGE_MODE_COMPLETED` (no payload) | `ChallengeModeInfoDocumentation.lua` |
 | Key Bindings sections are named by `_G[category]`, so `category="ADDONS"` shows under "AddOns"; `header` adds a spacer named by `BINDING_HEADER_<header>` | `Blizzard_SettingsDefinitions_Frame/Keybindings.lua` |

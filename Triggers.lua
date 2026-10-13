@@ -29,7 +29,7 @@ Triggers.LABELS = {
 local MYTHIC_DUNGEON = 23
 -- The Group Finder's Raids category. Blizzard names only the Dungeons one
 -- (GROUP_FINDER_CATEGORY_ID_DUNGEONS = 2, Blizzard_GroupFinder/Mainline/LFGList.lua);
--- 3 for Raids is to be confirmed in-game with `/km debug probe lfg`.
+-- 3 for Raids was confirmed in-game with `/km debug probe lfg` (v0.5.0 check).
 local RAID_CATEGORY = 3
 Triggers.MYTHIC_DUNGEON, Triggers.RAID_CATEGORY = MYTHIC_DUNGEON, RAID_CATEGORY
 
