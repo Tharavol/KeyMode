@@ -106,6 +106,9 @@ return function(stub, T)
         T.AssertTrue(dialog.intro:GetText():find("^Entered a raid: Liberation of Undermine%. "), "reason leads")
         T.AssertEqual(dialog.cancelButton:GetText(), "Not now", "Not now")
         T.AssertEqual(env.fixtures.reloads, 0, "nothing switched")
+        dialog.cancelButton:GetScript("OnEnter")(dialog.cancelButton)
+        local tip = table.concat(env.GameTooltip._lines, " ")
+        T.AssertTrue(tip:find("No more arrival prompts until the next reload.", 1, true), "Not now explains itself")
     end)
 
     T.Test("arrival: once per visit, again after leaving and coming back", function()
@@ -211,6 +214,9 @@ return function(stub, T)
         T.AssertTrue(Has(stub.TakeChat(env), "Prompts: arrival off, group on, departure on"), "listed")
         stub.Slash(env, "/km prompts arrival")
         T.AssertEqual(env.KeyModeDB.settings.prompts.arrival, true, "bare toggles")
+        stub.Slash(env, "/km prompts departure off")
+        stub.Slash(env, "/km prompts departure on")
+        T.AssertEqual(env.KeyModeDB.settings.prompts.departure, true, "on sets")
         stub.Slash(env, "/km prompts lobby on")
         T.AssertTrue(Has(stub.TakeChat(env), "'lobby' - expected 'arrival', 'group' or 'departure'."), "unknown")
         stub.Slash(env, "/km prompts group maybe")
@@ -273,6 +279,10 @@ return function(stub, T)
         T.AssertTrue(Has(stub.TakeChat(env), "Departure prompt not shown: not in Instance mode."), "needs Instance")
         stub.Slash(env, "/km debug trigger lobby")
         T.AssertTrue(Has(stub.TakeChat(env), "'lobby' - expected"), "unknown")
+        env.fixtures.inCombat = true
+        stub.Slash(env, "/km debug trigger group")
+        T.AssertTrue(Has(stub.TakeChat(env), "Group prompt: in combat, shown when combat ends."), "deferred")
+        T.AssertFalse(Shown(env), "not in combat")
     end)
 
     --------------------------------------------------------------------------
@@ -311,6 +321,27 @@ return function(stub, T)
         Enter(off, RAID, true)
         Enter(off, WORLD, true)
         T.AssertFalse(Shown(off), "Off: no departure")
+    end)
+
+    T.Test("departure: combat holds it back; shown after, dropped if back inside by then", function()
+        local env = InInstanceMode(Boot())
+        Enter(env, RAID, true)
+        env.fixtures.inCombat = true
+        Enter(env, WORLD, true)
+        T.AssertFalse(Shown(env), "not in combat")
+        env.fixtures.inCombat = false
+        stub.Fire(env, "PLAYER_REGEN_ENABLED")
+        T.AssertTrue(Shown(env), "shown after combat")
+        T.AssertEqual(Dialog(env).title:GetText(), "Switch to World mode", "title")
+
+        local back = InInstanceMode(Boot())
+        Enter(back, RAID, true)
+        back.fixtures.inCombat = true
+        Enter(back, WORLD, true)
+        back.fixtures.inCombat = false
+        Enter(back, RAID, true)
+        stub.Fire(back, "PLAYER_REGEN_ENABLED")
+        T.AssertFalse(Shown(back), "back in the raid")
     end)
 
     T.Test("departure: leaving the group in Instance mode offers World mode, once no group is left", function()

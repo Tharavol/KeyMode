@@ -119,6 +119,9 @@ The milestone and issue titles keep their original names.
 - **In-game QA matrix.** Several characters on different realms; addons added and
   removed between switches; load-on-demand addons; an addon with a load error; deep
   dependency trees (DBM, Details, DataStore); reload during a prompt; logout in M+ mode.
+- **Code polish pass (#42).** Developer probes kept out of the packaged zip, guarded
+  C_AddOns calls in Switch and Inventory, dead code and stale comments removed, stricter
+  luacheck.
 - **Rough-edge sweep.** No new scope: wording, layout at different UI scales, chat
   noise, options panel clipping, error handling in every C_AddOns call.
 - **Docs and metadata.** README final, `## X-ReleaseNotes`, CHANGELOG versioned,

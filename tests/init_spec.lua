@@ -16,6 +16,10 @@ return function(stub, T)
             fixtures.addons[1].metadata.Version = "v1.0.0"
         end)
         T.AssertEqual(env.ns.GetAddonVersion(), "v1.0.0")
+        env = stub.Load(function(_, fixtures)
+            fixtures.addons[1].metadata.Version = "1.0.0"
+        end)
+        T.AssertEqual(env.ns.GetAddonVersion(), "v1.0.0", "a bare version gets one")
     end)
 
     T.Test("ADDON_LOADED fills defaults into an empty DB", function()
