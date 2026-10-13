@@ -1,10 +1,10 @@
 -- Profiles.lua
 -- SPDX-License-Identifier: GPL-3.0-or-later
 --
--- The account-wide addon data: the Instance and World lists (#37), the protect list, and
--- (v0.4.0) import/export and suggested lists. Data only; never calls a mutating C_AddOns
--- function. Filled in by v0.2.0 (#9), v0.3.0 (#11, #16) and v0.4.0 (#19, #20, #21).
--- The file keeps its v0.1.0 name; "profiles" here means the two fixed lists.
+-- The account-wide addon data: the Instance and World lists (#37) and the protect list
+-- (#9), with the list operations behind the editor, import/export and suggested lists
+-- (#19, #20, #21). Data only; never calls a mutating C_AddOns function. The file keeps
+-- its first name; "profiles" here means the two fixed lists.
 
 local _, ns = ...
 

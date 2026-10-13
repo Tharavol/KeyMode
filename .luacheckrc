@@ -5,10 +5,10 @@ max_line_length = 120
 -- `luacheck .` would otherwise lint the toolchain along with the addon.
 exclude_files = {".luarocks/**", ".luarocks", "lua_modules/**", ".claude/**"}
 
--- WoW event handlers always receive (self, event, ...); ignore unused args
--- entirely since callbacks must match Blizzard's fixed signatures.
+-- Methods take an implicit `self` whether they use it or not. Every other unused
+-- argument is flagged: callbacks with a fixed signature name the ones they skip `_`.
 ignore = {
-    "212", -- unused argument
+    "212/self", -- unused implicit self
 }
 
 globals = {

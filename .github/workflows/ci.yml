@@ -75,6 +75,20 @@ jobs:
           unzip -l "$zip" | grep -q 'KeyMode/UI.lua'
           unzip -l "$zip" | grep -q 'KeyMode/Options.lua'
           unzip -l "$zip" | grep -q 'KeyMode/Commands.lua'
+          unzip -l "$zip" | grep -q 'KeyMode/Bindings.xml'
+
+          # The enable-state probes are development only (#42): their do-not-package
+          # blocks must be gone from the shipped files, and with them every call that
+          # changes enable state outside Switch.lua. grep without -q reads all its input,
+          # so unzip never dies of SIGPIPE and fails the pipeline under pipefail.
+          if unzip -p "$zip" 'KeyMode/*.lua' | grep 'do-not-package@' >/dev/null; then
+            echo "a do-not-package block survived packaging" >&2
+            exit 1
+          fi
+          if unzip -p "$zip" 'KeyMode/Probe.lua' | grep -E 'SaveAddOns|ResetAddOns|EnableAddOn|DisableAddOn' >/dev/null; then
+            echo "Probe.lua still changes enable state in the release archive" >&2
+            exit 1
+          fi
 
           # Dev-only tooling / docs; .pkgmeta ignores them, and they should stay ignored.
           # A bare `!` here would be exempt from set -e and silently not fail.

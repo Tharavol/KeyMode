@@ -5,7 +5,7 @@
 -- asks the switch plan (Plan.lua) what Instance mode, World mode or Off means against
 -- it, applies that by GUID, saves and reloads. Off restores the baseline exactly and
 -- ends management. Every entry point goes through Inventory's safe-to-switch guard
--- first. Filled in by v0.3.0 (#12, #14, #15).
+-- first. (#12, #14, #15)
 
 local _, ns = ...
 
@@ -28,11 +28,6 @@ local function Guid() return UnitGUID("player") end
 function Switch:Snapshot()
     local snapshots = ns.db and ns.db.snapshots
     return snapshots and snapshots[Guid()] or nil
-end
-
--- Whether KeyMode is managing this character, i.e. has a baseline pending restore.
-function Switch:IsActive()
-    return self:Snapshot() ~= nil
 end
 
 -- "instance", "world", or "off" when KeyMode is not managing this character.
@@ -71,9 +66,10 @@ end
 --------------------------------------------------------------------------
 
 -- The plan for `mode` against the current inventory, without changing anything. Also
--- returns the records it read, so a caller that goes on to apply it reads once.
+-- returns the records it read, so a caller that goes on to apply it reads once, and the
+-- addons the inventory could not read.
 function Switch:Preview(mode)
-    local records, graph = ns.Inventory:Read()
+    local records, graph, errors = ns.Inventory:Read()
     local snapshot = self:Snapshot()
     local plan = ns.Plan.Build({
         records = records,
@@ -83,12 +79,9 @@ function Switch:Preview(mode)
         lists = ns.Profiles:Lists(),
         isProtected = function(name) return ns.Profiles:IsProtected(name) end,
     })
-    return plan, records
+    return plan, records, errors
 end
 
--- Switches to `mode` ("instance", "world" or "off"). On success with changes to make it
--- reloads the UI and does not return in practice; otherwise returns true and a message
--- (nothing to change) or false and a player-facing reason.
 -- Whether a switch to `mode` may start now: a known mode, the guard (#10), and not the
 -- mode already active. Returns true, or false and a player-facing reason. The preview
 -- dialog asks before it opens, and Apply asks again on Confirm, since combat or a key
@@ -104,19 +97,38 @@ function Switch:Check(mode)
     return true
 end
 
+-- Switches to `mode` ("instance", "world" or "off"). On success with changes to make it
+-- reloads the UI and does not return in practice; otherwise returns true and a message
+-- (nothing to change) or false and a player-facing reason.
 function Switch:Apply(mode)
     local ok, reason = self:Check(mode)
     if not ok then return false, reason end
 
-    local plan, records = self:Preview(mode)
+    local plan, records, errors = self:Preview(mode)
+    if #errors > 0 then
+        return false, "Could not read every installed addon (" .. table.concat(errors, "; ")
+            .. "). Nothing was switched."
+    end
     local guid = Guid()
+    -- Every change first, each guarded: one the client refuses undoes the others
+    -- (ResetAddOns drops every unsaved change, #6) and leaves the saved data as it was.
+    local failed = {}
+    for _, entry in ipairs(plan.disable) do
+        if not pcall(C_AddOns.DisableAddOn, entry.name, guid) then failed[#failed + 1] = entry.name end
+    end
+    for _, entry in ipairs(plan.enable) do
+        if not pcall(C_AddOns.EnableAddOn, entry.name, guid) then failed[#failed + 1] = entry.name end
+    end
+    if #failed > 0 then
+        C_AddOns.ResetAddOns()
+        return false, "The client refused to change " .. table.concat(failed, ", ") .. ". Nothing was switched."
+    end
+
     if mode == "off" then
         ns.db.snapshots[guid] = nil
     else
         self:TakeBaseline(records).mode = mode
     end
-    for _, entry in ipairs(plan.disable) do C_AddOns.DisableAddOn(entry.name, guid) end
-    for _, entry in ipairs(plan.enable) do C_AddOns.EnableAddOn(entry.name, guid) end
     for _, name in ipairs(plan.removed) do
         ns.Print(name .. " was part of this character's setup but is no longer installed; skipped.")
     end

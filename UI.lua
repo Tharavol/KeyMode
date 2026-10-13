@@ -230,7 +230,7 @@ end)
 -- button and the compartment entry. It shows the plan for the target mode and switches
 -- only on Confirm and Reload, which re-runs the guard (Switch:Apply), since combat or a
 -- key can start while the dialog is open. Templates were checked against the live
--- client source (docs/HANDOFF.md "UI templates for v0.4.0").
+-- client source (docs/HANDOFF.md "UI templates").
 --------------------------------------------------------------------------
 
 local GOLD, GREY, CLOSE = "|cffffd200", "|cff999999", "|r"

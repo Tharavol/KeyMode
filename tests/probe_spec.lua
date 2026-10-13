@@ -148,6 +148,40 @@ return function(stub, T)
         T.AssertEqual(#stub.TakeChat(env), 0, "nothing printed")
     end)
 
+    T.Test("packaged: the fixture probes are gone, the read-only ones remain", function()
+        local env = stub.Boot(function(_, fixtures)
+            fixtures.packaged = true
+            stub.AddAddon(fixtures, "KeyModeProbe", { deps = { "keymode" } })
+        end)
+        T.AssertEqual(env.ns.Probe.Set, nil, "no Set")
+        stub.Slash(env, "/km debug probe")
+        T.AssertTrue(Has(stub.TakeChat(env), "Probe: expected scan, inventory [addon], categories, lfg, clear"),
+            "bare lists the probes")
+        for _, word in ipairs({ "enable guid", "disable guid", "save", "reset" }) do
+            stub.Slash(env, "/km debug probe " .. word)
+        end
+        T.AssertEqual(#env.fixtures.calls, 0, "no mutation reaches the client")
+        stub.Slash(env, "/km debug probe keymodeprobe")
+        T.AssertTrue(Has(stub.TakeChat(env), "Probe: KeyModeProbe"), "an addon report still works")
+        local before = #env.ns.db.probeLog
+        stub.Fire(env, "PLAYER_LOGIN")
+        T.AssertEqual(#env.ns.db.probeLog, before, "no login logging")
+        stub.Slash(env, "/km help")
+        local help = table.concat(stub.TakeChat(env), "\n")
+        T.AssertTrue(help:find("/km debug probe <scan", 1, true), "read-only probes in help")
+        T.AssertFalse(help:find("KeyModeProbe", 1, true), "fixture probes not in help")
+    end)
+
+    T.Test("every addon file still compiles with its do-not-package blocks removed", function()
+        for _, path in ipairs(stub.TocFiles()) do
+            local handle = assert(io.open(path, "r"))
+            local source = handle:read("*a")
+            handle:close()
+            local chunk, err = loadstring(stub.Packaged(source), "@" .. path)
+            T.AssertTrue(chunk, tostring(err))
+        end
+    end)
+
     T.Test("debug on/off still toggles", function()
         local env = Boot(false)
         stub.Slash(env, "/km debug on")

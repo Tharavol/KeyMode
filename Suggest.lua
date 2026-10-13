@@ -5,7 +5,7 @@
 -- installed, each addon's `## Category` and its folder name. Build is pure: no ns.db
 -- access, no C_AddOns calls, no chat output. Region is the one thin helper that reads
 -- the client. The rules are data tables below, so a new addon or category is one line.
--- Filled in by v0.4.0 (#21), modelled on docs/REFERENCE_PROFILE.md.
+-- Modelled on docs/REFERENCE_PROFILE.md.
 --
 -- The model: Instance mode (Mythic Keystone dungeons and raids) turns off the Instance
 -- list, World mode (everything else) turns off the World list. A suggestion must never

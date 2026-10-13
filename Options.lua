@@ -1,8 +1,8 @@
 -- Options.lua
 -- SPDX-License-Identifier: GPL-3.0-or-later
 --
--- The options panel under Options > AddOns > KeyMode. Filled in by #3, and later by the
--- list editor (#18) and per-trigger toggles (#25).
+-- The options panel under Options > AddOns > KeyMode (#3): the mode, the settings and a
+-- checkbox per switch prompt (#25). The list editor (#18) is its Lists subpage.
 
 local ADDON_NAME, ns = ...
 

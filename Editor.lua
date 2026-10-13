@@ -5,7 +5,7 @@
 -- AddOns > KeyMode with an Instance and a World checkbox per installed addon. The rows
 -- come from a pure function (Editor.Rows) the offline suite covers; the page only draws
 -- them. Templates were checked against the live client source (docs/HANDOFF.md "UI
--- templates for v0.4.0"). Filled in by v0.4.0 (#18, #19).
+-- templates").
 
 local _, ns = ...
 

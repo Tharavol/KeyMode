@@ -31,7 +31,6 @@ local MYTHIC_DUNGEON = 23
 -- (GROUP_FINDER_CATEGORY_ID_DUNGEONS = 2, Blizzard_GroupFinder/Mainline/LFGList.lua);
 -- 3 for Raids was confirmed in-game with `/km debug probe lfg` (v0.5.0 check).
 local RAID_CATEGORY = 3
-Triggers.MYTHIC_DUNGEON, Triggers.RAID_CATEGORY = MYTHIC_DUNGEON, RAID_CATEGORY
 
 --------------------------------------------------------------------------
 -- Decisions (pure, so the stub tests cover them without events)
@@ -90,10 +89,7 @@ local function InCombat()
     return type(InCombatLockdown) == "function" and InCombatLockdown()
 end
 
--- Offers a switch to `mode` for `trigger`, saying `reason`. `still`, when given, is asked
--- again before a deferred offer opens, since the moment may have passed during combat.
--- Returns "shown", "deferred", or false and why not (for the tests and the debug path).
-function Triggers:Offer(trigger, mode, reason, still)
+local function Decide(self, trigger, mode, reason, still)
     if not self:IsEnabled(trigger) then return false, "turned off" end
     if self:IsSnoozed(trigger) then return false, "snoozed" end
     if ns.Switch:Mode() == mode then return false, "already in that mode" end
@@ -113,6 +109,15 @@ function Triggers:Offer(trigger, mode, reason, still)
     if dialog and dialog:IsShown() then return false, "dialog already open" end
     ns.UI:Preview(mode, { trigger = trigger, reason = reason })
     return "shown"
+end
+
+-- Offers a switch to `mode` for `trigger`, saying `reason`. `still`, when given, is asked
+-- again before a deferred offer opens, since the moment may have passed during combat.
+-- Returns "shown", "deferred", or false and why not; with `/km debug` on, says which.
+function Triggers:Offer(trigger, mode, reason, still)
+    local result, why = Decide(self, trigger, mode, reason, still)
+    ns.Debug(self.LABELS[trigger] .. ": " .. (result or ("not shown, " .. tostring(why))) .. " -- " .. tostring(reason))
+    return result, why
 end
 
 function Triggers:OnCombatEnded()
@@ -171,7 +176,11 @@ local function CheckDeparture(info)
     if InInstance(info) or not InInstance(last) then return end
     local finished = state.keyDone or last.instanceType == "raid"
     state.keyDone = false
-    if not finished or ns.Switch:Mode() ~= "instance" then return end
+    if not finished then
+        ns.Debug("Left " .. tostring(last.name) .. " without a completed key: no departure prompt.")
+        return
+    end
+    if ns.Switch:Mode() ~= "instance" then return end
     Triggers:Offer("departure", "world", "Left " .. tostring(last.name) .. ".", function()
         return not InInstance(InstanceInfo())
     end)
@@ -219,7 +228,10 @@ end
 
 local function OfferGroup(activityIDs, verb)
     local activity, kind = Triggers.GroupActivity(Activities(activityIDs))
-    if not activity then return end
+    if not activity then
+        ns.Debug(verb .. " a group that is not Mythic+ or a raid: no group prompt.")
+        return
+    end
     local name = activity.fullName or activity.shortName or kind
     Triggers:Offer("group", "instance", verb .. " a " .. kind .. " group: " .. tostring(name) .. ".")
 end
@@ -291,6 +303,7 @@ function Triggers:Simulate(trigger)
         return
     end
     local result, why = self:Offer(trigger, simulated.mode, simulated.reason)
+    if ns.db.settings.debug then return end -- Offer has said what happened
     if result == "deferred" then
         ns.Print(self.LABELS[trigger] .. ": in combat, shown when combat ends.")
     elseif not result then
