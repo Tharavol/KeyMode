@@ -1,4 +1,4 @@
-## Interface: 120100
+## Interface: 120105
 ## Title: KeyMode
 ## Notes: Switches to a lean set of addons for Mythic+ and raids, and back to your full setup afterwards, with one command and one reload
 ## Author: Tharavol, Claude
