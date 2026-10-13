@@ -2,7 +2,27 @@
 
 All notable changes to the KeyMode addon are documented in this file.
 
-## [0.5.0]
+## [1.0.0]
+
+First stable release: a polish pass over v0.5.0, with no new features.
+
+- A switch is safer: every enable-state change is checked, and if the client refuses
+  one, the others are undone, nothing is saved, no reload happens and the mode stays as
+  it was. An addon the client cannot read now blocks the switch, instead of being
+  treated as uninstalled (#42).
+- `/km debug on` now shows what each switch prompt decided and why: shown, waiting for
+  the end of combat, or not shown (turned off, snoozed, already in that mode, nothing to
+  change) (#42).
+- The enable-state probes used during development (`/km debug probe enable|disable|
+  save|reset` on the KeyModeProbe test addon) are no longer in the release. The
+  read-only probes remain: `scan`, `inventory [addon]`, `categories`, `lfg` and
+  `/km debug probe <addon>` (#42).
+- The TOC carries a summary for addon managers (`X-ReleaseNotes`). The README has
+  install steps for the release zip, a getting-started guide and troubleshooting (#30).
+- Tests cover the paths a line-coverage run found unexercised, including a departure
+  prompt that waits for combat to end (#27).
+
+## [0.5.0] - 2026-10-12
 
 Switch prompts and a key binding. A prompt is the preview dialog with a reason on top:
 nothing switches without Confirm and Reload.
@@ -26,7 +46,7 @@ nothing switches without Confirm and Reload.
   `/km debug probe lfg` prints what the prompts see (instance, difficulty, group, Group
   Finder activities).
 
-## [0.4.0]
+## [0.4.0] - 2026-10-12
 
 Switching and list editing without slash commands.
 
@@ -56,7 +76,7 @@ Switching and list editing without slash commands.
   requires always stays on. The editor now shows those addons locked, "needed by" the
   protected one.
 
-## [0.3.0]
+## [0.3.0] - 2026-10-12
 
 Switching, from the command line. Named profiles are replaced by two fixed lists (#37):
 **Instance** for Mythic Keystone dungeons and raids, and **World** for the rest of the
@@ -79,7 +99,7 @@ time (empty by default).
   [add|remove <addon>]` and `protect [add|remove <addon>]`. `status`, the tooltip and
   the options panel show the mode (Instance, World or Off). `on` is gone (#16).
 
-## [0.2.0]
+## [0.2.0] - 2026-10-12
 
 Addon inventory and live API verification. Still no switching; that is v0.3.0.
 
@@ -97,7 +117,7 @@ Addon inventory and live API verification. Still no switching; that is v0.3.0.
   encounter. `/km status` shows the protect list and whether a switch is allowed now
   (#10).
 
-## [0.1.0]
+## [0.1.0] - 2026-10-08
 
 First pre-release: scaffolding, the command surface and the entry points. Switching
 itself arrives in v0.3.0.
@@ -120,3 +140,10 @@ itself arrives in v0.3.0.
   status, drag to move it around the minimap edge (round and reshaped minimaps).
   `/km minimap [on|off]` and a "Show minimap button" checkbox toggle it. Built to be
   collectable by minimap-button bars such as HidingBar; no library dependency (#34).
+
+[1.0.0]: https://github.com/Tharavol/KeyMode/compare/v0.5.0...v1.0.0
+[0.5.0]: https://github.com/Tharavol/KeyMode/compare/v0.4.0...v0.5.0
+[0.4.0]: https://github.com/Tharavol/KeyMode/compare/v0.3.0...v0.4.0
+[0.3.0]: https://github.com/Tharavol/KeyMode/compare/v0.2.0...v0.3.0
+[0.2.0]: https://github.com/Tharavol/KeyMode/compare/v0.1.0...v0.2.0
+[0.1.0]: https://github.com/Tharavol/KeyMode/releases/tag/v0.1.0

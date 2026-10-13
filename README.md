@@ -5,13 +5,8 @@ World of Warcraft retail addon (12.x / Midnight) that switches a character to a 
 set of addons for Mythic+ dungeons and raids, and back again afterwards -- one command,
 one `/reload`.
 
-> **Status: pre-release.** Development is tracked in milestones v0.1.0 through v1.0.0;
-> see [docs/PLAN.md](docs/PLAN.md). v0.1.0: the options panel, the commands, the
-> minimap button and the Addon Compartment entry. v0.2.0: the addon inventory,
-> dependency graph, protect list and safe-to-switch guard, with the enable-state API
-> verified in-game. v0.3.0: Instance and World modes and the switch engine. v0.4.0: the
-> preview dialog, the list editor, import/export and suggested lists. v0.5.0: the
-> switch prompts and the key binding.
+Nothing switches without a click: every switch, including the automatic prompts, first
+shows what will change and waits for Confirm and Reload.
 
 Why
 ---
@@ -21,8 +16,8 @@ legacy boss modules. Most of their cost is SavedVariables parsed at login. Disab
 them by hand in the AddOns list before every key, then re-enabling exactly what was on
 before, is tedious and error-prone. KeyMode does both halves.
 
-Features (planned for 1.0)
---------------------------
+Features
+--------
 - **Two modes, two lists.** The Instance list names what to turn off in Mythic
   Keystone dungeons and raids; the optional World list names what to turn off the rest
   of the time (empty by default). Both are account-wide, so they work on every
@@ -46,9 +41,21 @@ Features (planned for 1.0)
 
 Installation
 ------------
-Copy the folder to:
+Download `KeyMode-<version>.zip` from the
+[releases page](https://github.com/Tharavol/KeyMode/releases) and extract it into the
+AddOns folder, so the addon ends up in:
 
 - Windows: `World of Warcraft\_retail_\Interface\AddOns\KeyMode`
+
+Getting started
+---------------
+1. Open Options > AddOns > KeyMode > Lists (or `/km`, then Lists).
+2. Press Suggest for starting lists worked out from what is installed, untick anything
+   to keep on, then Accept. Or tick addons by hand.
+3. Enter a raid or a Mythic dungeon in a group, or join one through the Group Finder,
+   and KeyMode offers Instance mode. `/km instance` does the same at any time.
+4. Afterwards KeyMode offers World mode (or `/km world`); `/km off` restores this
+   character's own setup exactly and stops managing it.
 
 Commands
 --------
@@ -83,12 +90,32 @@ HidingBar can collect it.
 
 Release notes are in [CHANGELOG.md](CHANGELOG.md).
 
+Troubleshooting
+---------------
+- **Back to the setup from before KeyMode.** `/km off` restores this character's enable
+  state as it was at the first switch, then reloads. It works from either mode.
+- **"Cannot switch now".** No switch happens in combat, during an active keystone or
+  during a boss encounter; try again afterwards. A prompt that arrives in combat waits
+  for combat to end.
+- **An addon came back on, or stayed off.** At every login in a mode, KeyMode compares
+  the actual state with the mode. An addon changed by hand in the game's AddOn list is
+  kept as it is and kept on Off; a listed addon turned back on is reported, and the
+  mode's command (for example `/km instance`) turns it off again.
+- **"No longer installed, skipped".** An addon removed since the first switch is
+  skipped on Off; nothing else is affected.
+- **A prompt every time.** "Not now" silences a prompt until the next reload. To turn
+  one off for good, untick it under Options > AddOns > KeyMode > Prompts, or use
+  `/km prompts arrival off` (or `group`, `departure`).
+- **Something else.** `/km status` shows the mode, list sizes and whether a switch is
+  allowed right now. Issues: https://github.com/Tharavol/KeyMode/issues
+
 Development
 -----------
 - `luacheck .` lints the addon.
 - `lua scripts/validate-toc.lua` runs the same TOC check CI does, from the repository root.
 - `lua tests/run_tests.lua` runs the addon against a stubbed WoW API, from the repository root.
-- Design notes and verified API facts: [docs/HANDOFF.md](docs/HANDOFF.md).
+- Design notes and verified API facts: [docs/HANDOFF.md](docs/HANDOFF.md); milestone
+  plan: [docs/PLAN.md](docs/PLAN.md).
 
 License
 -------

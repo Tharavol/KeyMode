@@ -2,17 +2,18 @@
 
 Six milestones, each a GitHub milestone of the same name with one issue per bullet.
 Each milestone ends with a tagged release of that version. Every v0.x tag is published
-as a GitHub pre-release (`release.yml` flags it); v1.0.0 is the first stable release. Work is merged in milestone order -- later milestones
-build on the switch engine, so it lands and is verified before any UI goes on top of it.
+as a GitHub pre-release (`release.yml` flags it); v1.0.0 is the first stable release.
+Work is merged in milestone order -- later milestones build on the switch engine, so it
+lands and is verified before any UI goes on top of it.
 
-| Milestone | Theme | Exit criteria |
-| --- | --- | --- |
-| v0.1.0 | Scaffolding and command surface | Addon loads clean, `/km help` works, CI green |
-| v0.2.0 | Addon inventory and live API verification | Every C_AddOns assumption confirmed in-game and written down |
-| v0.3.0 | Instance and World lists, switch engine | Instance, World and Off from the command line, restore is exact |
-| v0.4.0 | Preview dialog and list editor | No list editing or switching needs a slash command |
-| v0.5.0 | Triggers and entry points | Arrival and departure prompts, key binding |
-| v1.0.0 | Polish pass and stable release | QA matrix passed, docs final, v1.0.0 tagged and released |
+| Milestone | Theme | Exit criteria | Status |
+| --- | --- | --- | --- |
+| v0.1.0 | Scaffolding and command surface | Addon loads clean, `/km help` works, CI green | Released 2026-10-08 |
+| v0.2.0 | Addon inventory and live API verification | Every C_AddOns assumption confirmed in-game and written down | Released 2026-10-12 |
+| v0.3.0 | Instance and World lists, switch engine | Instance, World and Off from the command line, restore is exact | Released 2026-10-12 |
+| v0.4.0 | Preview dialog and list editor | No list editing or switching needs a slash command | Released 2026-10-12 |
+| v0.5.0 | Triggers and entry points | Arrival and departure prompts, key binding | Released 2026-10-12 |
+| v1.0.0 | Polish pass and stable release | QA matrix passed, docs final, v1.0.0 tagged and released | In progress |
 
 ## v0.1.0 -- Scaffolding and command surface
 
@@ -114,17 +115,28 @@ The milestone and issue titles keep their original names.
 
 ## v1.0.0 -- Polish pass and stable release
 
-- **Test coverage.** Every pure function in Inventory/Profiles/Switch covered, including
-  the dependency edge cases found during v0.2.0-v0.5.0.
-- **In-game QA matrix.** Several characters on different realms; addons added and
+- **Test coverage (#27).** Every pure function in Inventory/Profiles/Switch covered,
+  including the dependency edge cases found during v0.2.0-v0.5.0. A line-coverage run
+  over the suite drove the additions.
+- **In-game QA matrix (#28).** Several characters on different realms; addons added and
   removed between switches; load-on-demand addons; an addon with a load error; deep
   dependency trees (DBM, Details, DataStore); reload during a prompt; logout in M+ mode.
+  Plus the v0.5.0 cases so far covered only offline: arrival in a Mythic dungeon,
+  departure after a completed key, the group prompt as an applicant, and a prompt
+  deferred by combat.
 - **Code polish pass (#42).** Developer probes kept out of the packaged zip, guarded
   C_AddOns calls in Switch and Inventory, dead code and stale comments removed, stricter
   luacheck.
-- **Rough-edge sweep.** No new scope: wording, layout at different UI scales, chat
+- **Rough-edge sweep (#29).** No new scope: wording, layout at different UI scales, chat
   noise, options panel clipping, error handling in every C_AddOns call.
-- **Docs and metadata.** README final, `## X-ReleaseNotes`, CHANGELOG versioned,
+- **Docs and metadata (#30).** README final, `## X-ReleaseNotes`, CHANGELOG versioned,
   HANDOFF current.
-- **Release.** Tag v1.0.0, verify the release workflow and archive layout, close the
-  issues and the milestone.
+- **Release (#31).** Tag v1.0.0, verify the release workflow and archive layout, close
+  the issues and the milestone.
+
+## After 1.0
+
+Unscheduled; each is a backlog issue with no milestone.
+
+- **Publish to CurseForge and Wago (#43).** The packager can upload there too; it needs
+  a project on each site, the project IDs in the TOC and the API tokens as secrets.

@@ -12,21 +12,25 @@ management.
 
 ## Current state
 
-- v0.1.0 to v0.4.0 released as pre-releases. v0.5.0 (#22-#26) is complete on
-  `milestone/v0.5.0` and passed its in-game check, awaiting release. Files, in TOC load
-  order (plus `Bindings.xml`, which the client loads from the folder by itself):
+- v0.1.0 to v0.5.0 released as pre-releases. v1.0.0, the polish pass (#27-#31, #42),
+  is on `milestone/v1.0.0`: tests (#27), code polish (#42) and docs (#30) are done; the
+  in-game QA matrix (#28) and the in-game half of the rough-edge sweep (#29) are next.
+  Files, in TOC load order (plus `Bindings.xml`, which the client loads from the folder
+  by itself):
   - `Core.lua` -- namespace, `ns.Print`, `ns.Debug`, `ns.GetAddonVersion`, SavedVariables
     defaults (schema v3: `lists`, `snapshots`, `protected`, `settings`, with
     `settings.prompts`), `ns.Migrate` (runs before defaults; 1 -> 2 drops `profiles`,
     2 -> 3 renames the `BugGrabber` protect entry to `!BugGrabber`), `ns.ResetSettings`,
     the `ADDON_LOADED` handler, `ns.CreateFrameWithFallback`.
-  - `Inventory.lua` -- `Inventory:Scan()` / `:Read()` (#7, enable state by GUID), the
+  - `Inventory.lua` -- `Inventory:Scan()` / `:Read()` (#7, enable state by GUID; each
+    addon read under pcall, and the ones the client fails on come back as a list of
+    errors, which blocks a switch), the
     pure dependency graph `BuildGraph` / `Dependents` / `Requirements` (#8), and the
     safe-to-switch guard `Inventory:CanSwitch()` (#10).
   - `Profiles.lua` -- the protect list (#9): `IsProtected`, `ProtectedList`, `Protect`,
     `Unprotect`. KeyMode is protected in code; removals are saved as `false`. The
     Instance and World lists (#11): `ListNames`, `InList`, `ListAdd`, `ListRemove`,
-    `Lists`; removals delete the key. The file keeps its v0.1.0 name.
+    `Lists`; removals delete the key. The file keeps its first name.
   - `Plan.lua` -- `Plan.Build(input)` (#13), pure: (records, graph, baseline, mode,
     lists, isProtected) -> `{ target, disable, enable, kept, removed, unknown }`.
     Protected addons and everything they require are kept, and the cascade is taken
@@ -36,8 +40,10 @@ management.
   - `Suggest.lua` -- `Suggest.Build` (#21), pure: data-driven category and name-pattern
     rules for both lists, smallest set (nothing that requires another suggestion);
     `Suggest.Region()`, `Suggest.CURRENT_EXPANSION` (bump each expansion).
-  - `Switch.lua` -- the only caller of `EnableAddOn`/`DisableAddOn` outside the probe.
-    `Snapshot`, `Mode`, `ModeLabel`, `TakeBaseline` (#12), `Preview`, `Apply` (#14),
+  - `Switch.lua` -- the only caller of `EnableAddOn`/`DisableAddOn` in a release build.
+    `Snapshot`, `Mode`, `ModeLabel`, `TakeBaseline` (#12), `Preview`, `Apply` (#14;
+    every change under pcall, and a refused one is undone with `ResetAddOns` before
+    anything is saved or the baseline taken),
     `Reconcile` and the `PLAYER_LOGIN` handler: the login check (#14) and the Instance
     mode reminder (#15). `KeyModeDB.switched[guid]` carries "a switch just happened"
     across the reload for the confirmation line.
@@ -47,7 +53,8 @@ management.
     `PLAYER_REGEN_ENABLED`) and opens `UI:Preview(mode, prompt)`. Zone, group, Group
     Finder and key-completion events feed it, including the departure prompt (#24).
     `Triggers:Simulate` backs `/km debug trigger`. Snoozes are Lua state, so they last
-    until the next reload.
+    until the next reload. With `/km debug on`, `Offer` logs each decision through
+    `ns.Debug`.
   - `UI.lua` -- Addon Compartment handlers (globals named in the TOC) and the minimap
     button (#34); both route through `UI:OnEntryClick` / `UI:ShowEntryTooltip`. The
     preview dialog (#17): `UI:Preview(mode, prompt)` (every switch path; a prompt adds
@@ -60,18 +67,22 @@ management.
   - `Editor.lua` -- the Lists subpage (#18): pure `Editor.Rows`, the scroll list
     (`WowScrollBoxList`), clear/copy (#19), the import/export dialog (#20) and pending
     suggestions with Accept/Discard (#21).
-  - `Probe.lua` -- `/km debug probe`, the in-game enable-state checks for #6 (see
-    "Enable-state probe procedure") and `probe inventory [addon]` for checking #7/#8
-    against the real install, `probe categories` (#21) and `probe lfg` (what the switch
-    prompts see: instance, difficulty, group, Group Finder activities). Output is also
-    kept in `KeyModeDB.probeLog`.
+  - `Probe.lua` -- `/km debug probe`, read-only: `scan`, `inventory [addon]` (#7/#8
+    against the real install), `categories` (#21), `lfg` (what the switch prompts see)
+    and `<addon>` (one addon under every character key). The #6 enable-state probes
+    (see "Enable-state probe procedure") sit in `--@do-not-package@` blocks, which the
+    packager strips: they exist in a git checkout only. Output is also kept in
+    `KeyModeDB.probeLog`.
   - `Commands.lua` -- loads last; `/keymode`, `/km`; `Commands.COMMANDS` drives both
     dispatch and help.
 - Tests: `tests/stub_api.lua` loads every file `KeyMode.toc` lists, in TOC order, into
   an isolated environment per test; `tests/run_tests.lua` runs the `*_spec.lua` files.
   The stub models installed addons (`stub.AddAddon`), dependencies and per-character
   enable state; `stub_spec.lua` pins that model. Character keys resolve the way the live
-  client was seen to resolve them (#6, "API facts").
+  client was seen to resolve them (#6, "API facts"), and `ResetAddOns` undoes every
+  change since the last `SaveAddOns`. `fixtures.packaged = true` loads the addon with
+  its do-not-package blocks removed, as the release zip has it; CI and the release
+  workflows also check the real zip for leftovers.
 - Settings plumbing: writers call `ns.SettingsChanged()`; views register with
   `ns.OnSettingsChanged(fn)`. Startup work needing `ns.db` registers with
   `ns.OnLoaded(fn)`, run at KeyMode's `ADDON_LOADED` in TOC order.
@@ -128,15 +139,15 @@ realm, C on another. "yes (#6)" means the live client did exactly this.
 | Compartment TOC fields are `AddonCompartmentFunc`, `AddonCompartmentFuncOnEnter`, `AddonCompartmentFuncOnLeave`, called as globals with `(addonName, buttonName)` and `(addonName, menuButton)`; icon from `IconTexture` or `IconAtlas` | `AddonCompartment.lua` | yes (PR #32) |
 | Enable state is stored per character in `WTF\Account\<ACCOUNT>\<Realm>\<Character>\AddOns.txt` as `Name: enabled|disabled`. At exit the client rewrote that file for every character with an entry for a changed addon (30 of 49), not only those logged in. Not every installed addon appears (KeyMode itself does not), so the file is no substitute for the API and KeyMode never reads it | observed on disk | yes (#6) |
 
-Decision for v0.3.0: the switch engine passes `UnitGUID("player")` to every enable-state
+Decision (v0.3.0): the switch engine passes `UnitGUID("player")` to every enable-state
 call, calls `SaveAddOns()` then `ReloadUI()`, and never passes nil or `"0"`.
 
 Source: `Gethe/wow-ui-source`, `live` branch, fetched 2026-10-08.
 
-### UI templates for v0.4.0
+### UI templates
 
-Checked against `Gethe/wow-ui-source` branch `live` (12.1.0, build 69933) before any
-v0.4.0 UI was written. Source only: none of these has been tried in-game yet.
+Checked against `Gethe/wow-ui-source` branch `live` (12.1.0, build 69933) before the
+v0.4.0 UI was written, and in use in-game since the v0.4.0 check.
 
 | Piece | Where it is defined |
 | --- | --- |
@@ -150,7 +161,7 @@ v0.4.0 UI was written. Source only: none of these has been tried in-game yet.
 | `UIPanelButtonTemplate` | `Blizzard_SharedXML/Mainline/SharedUIPanelTemplates.xml` |
 | `Settings.RegisterCanvasLayoutSubcategory(parentCategory, frame, name)` | `Blizzard_Settings_Shared/Blizzard_Settings.lua` |
 
-### Switch prompts for v0.5.0
+### Switch prompts
 
 Checked against `Gethe/wow-ui-source` branch `live` (12.1.0) before the prompts were
 written, then in-game in the v0.5.0 check with `/km debug probe lfg`:
@@ -175,13 +186,14 @@ written, then in-game in the v0.5.0 check with `/km debug probe lfg`:
 | `CHALLENGE_MODE_COMPLETED` (no payload) | `ChallengeModeInfoDocumentation.lua` |
 | Key Bindings sections are named by `_G[category]`, so `category="ADDONS"` shows under "AddOns"; `header` adds a spacer named by `BINDING_HEADER_<header>` | `Blizzard_SettingsDefinitions_Frame/Keybindings.lua` |
 
-Decided for v0.5.0: arrival prompts only in a group (solo legacy farming would prompt on
+Decided (v0.5.0): arrival prompts only in a group (solo legacy farming would prompt on
 every visit), and "Not now" lasts until the next reload or logout.
 
 ### Enable-state probe procedure (#6)
 
-`/km debug probe` (`Probe.lua`) prints what the client reports; its mutations touch only
-the `KeyModeProbe` fixture. Setup: copy `tests/fixtures/KeyModeProbe` into
+Development only: these probes are stripped from the release zip, so run them from a
+git checkout copied into `Interface\AddOns`. `/km debug probe` (`Probe.lua`) prints
+what the client reports; its mutations touch only the `KeyModeProbe` fixture. Setup: copy `tests/fixtures/KeyModeProbe` into
 `Interface\AddOns`, log in on character A, and keep character B (same realm) and C
 (another realm) for the cross-character checks. `<key>` is one of `guid`, `name`,
 `full` (Name-Realm), `zero` (`"0"`), `all` (nil).
@@ -235,6 +247,7 @@ against LibDBIcon's table as data.
   keystone, encounter).
 - **Pure planning, thin applying.** Inventory, dependency graph and switch plan are pure
   functions over plain tables so they can be tested offline; only `Switch.lua` calls the
-  mutating C_AddOns functions. The one exception is `Probe.lua` (#6), which only ever
-  changes the `KeyModeProbe` fixture addon.
+  mutating C_AddOns functions. The one exception is the development-only part of
+  `Probe.lua` (#6), which only ever changes the `KeyModeProbe` fixture addon and is not
+  in the release zip.
 - **KeyMode is always protected.** It can never appear in a disable plan.

@@ -1,11 +1,12 @@
-# Reference M+ profile
+# Reference Instance list
 
-A real-world disable list, drawn from a 201-addon install (2026-10-08). Used as the
-test fixture for the switch plan and as the first profile entered during in-game QA.
-Not shipped as a default: every install differs, and v0.4.0's "suggest a starting
-profile" action is the generic path.
+A real-world Instance list (what to turn off for Mythic+ and raids), drawn from a
+201-addon install (2026-10-08). Used as the test fixture for the switch plan, as the
+first list entered during in-game QA, and as the model for the suggested lists
+(`Suggest.lua`). Not shipped as a default: every install differs, and Suggest on the
+Lists page is the generic path.
 
-## Disable
+## Instance list
 
 **Professions and auction house:** TradeSkillMaster, TradeSkillMaster_AppHelper,
 Auctionator, Collectionator, BestCraft, ShoppingConverter, CraftSim,
