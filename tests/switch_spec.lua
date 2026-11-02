@@ -201,6 +201,17 @@ return function(stub, T)
         T.AssertEqual(env.KeyModeDB.snapshots[env.fixtures.player.guid], nil, "no baseline")
     end)
 
+    T.Test("if the undo is refused too, the reason says the other changes still apply", function()
+        local env = Boot(function(_, fixtures) stub.AddAddon(fixtures, "Stubborn", { refuse = true }) end)
+        Instance(env)
+        stub.Slash(env, "/km list instance add Stubborn")
+        env.C_AddOns.ResetAddOns = function() error("refused") end
+        Go(env, "/km instance")
+        T.AssertTrue(Has(stub.TakeChat(env), "The other changes apply at the next reload."), "said")
+        T.AssertEqual(env.fixtures.reloads, 0, "no reload")
+        T.AssertEqual(env.ns.Switch:Mode(), "off", "mode unchanged")
+    end)
+
     T.Test("an addon the client cannot read blocks the switch", function()
         local env = Boot(function(_, fixtures) stub.AddAddon(fixtures, "Garbled", { unreadable = true }) end)
         Instance(env)

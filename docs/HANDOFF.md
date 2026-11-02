@@ -65,8 +65,9 @@ management.
     Prompts sections (`Options.GetSetting` / `SetSetting` reach `settings.prompts`);
     `Options:Refresh()` re-reads every widget from `ns.db`.
   - `Editor.lua` -- the Lists subpage (#18): pure `Editor.Rows`, the scroll list
-    (`WowScrollBoxList`), clear/copy (#19), the import/export dialog (#20) and pending
-    suggestions with Accept/Discard (#21).
+    (`WowScrollBoxList`), clear/copy (#19) and pending suggestions with Accept/Discard
+    (#21).
+  - `EditorShare.lua` -- the import/export dialog (#20), on the page's `ns.Editor`.
   - `Probe.lua` -- `/km debug probe`, read-only: `scan`, `inventory [addon]` (#7/#8
     against the real install), `categories` (#21), `lfg` (what the switch prompts see)
     and `<addon>` (one addon under every character key). The #6 enable-state probes

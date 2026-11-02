@@ -120,8 +120,9 @@ function Switch:Apply(mode)
         if not pcall(C_AddOns.EnableAddOn, entry.name, guid) then failed[#failed + 1] = entry.name end
     end
     if #failed > 0 then
-        C_AddOns.ResetAddOns()
-        return false, "The client refused to change " .. table.concat(failed, ", ") .. ". Nothing was switched."
+        local undone = pcall(C_AddOns.ResetAddOns)
+        return false, "The client refused to change " .. table.concat(failed, ", ") .. ". "
+            .. (undone and "Nothing was switched." or "The other changes apply at the next reload.")
     end
 
     if mode == "off" then
@@ -161,8 +162,7 @@ end
 function Switch:Reconcile()
     local snapshot = self:Snapshot()
     if not snapshot then return {}, {} end
-    local records = ns.Inventory:Scan()
-    local plan = self:Preview(snapshot.mode)
+    local plan, records = self:Preview(snapshot.mode)
     local folded, stray = {}, {}
     local lower = {}
     for name in pairs(snapshot.state) do lower[name:lower()] = name end

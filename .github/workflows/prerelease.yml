@@ -46,6 +46,12 @@ jobs:
           unzip -l "$zip" | grep -q 'KeyMode/UI.lua'
           unzip -l "$zip" | grep -q 'KeyMode/Options.lua'
           unzip -l "$zip" | grep -q 'KeyMode/Commands.lua'
+          unzip -l "$zip" | grep -q 'KeyMode/Plan.lua'
+          unzip -l "$zip" | grep -q 'KeyMode/Share.lua'
+          unzip -l "$zip" | grep -q 'KeyMode/Suggest.lua'
+          unzip -l "$zip" | grep -q 'KeyMode/Editor.lua'
+          unzip -l "$zip" | grep -q 'KeyMode/EditorShare.lua'
+          unzip -l "$zip" | grep -q 'KeyMode/Probe.lua'
           unzip -l "$zip" | grep -q 'KeyMode/Bindings.xml'
 
           # The enable-state probes are development only (#42): their do-not-package

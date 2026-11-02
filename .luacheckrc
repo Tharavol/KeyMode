@@ -54,11 +54,8 @@ read_globals = {
     "GetInstanceInfo", "C_LFGList",
 
     -- Safe-to-switch guard inputs (#10), also probed by `/km debug probe scan` (#6);
-    -- each is nil-checked, IsEncounterInProgress unverified on 12.x
+    -- each is nil-checked
     "C_ChallengeMode", "IsEncounterInProgress",
-
-    -- Pre-C_AddOns fallback the version helper still branches on
-    "GetAddOnMetadata",
 }
 
 -- The test harness deliberately writes WoW globals into its stub environment.

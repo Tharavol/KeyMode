@@ -23,5 +23,6 @@ Triggers.lua
 UI.lua
 Options.lua
 Editor.lua
+EditorShare.lua
 Probe.lua
 Commands.lua
