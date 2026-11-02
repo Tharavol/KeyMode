@@ -4,7 +4,7 @@
 -- The switch plan: which addons a switch turns off and which it turns back on, worked
 -- out from the baseline, the Instance and World lists and the dependency graph. Pure: no
 -- C_AddOns calls, no ns.db access, no chat output. Switch.lua applies what this returns.
--- Filled in by v0.3.0 (#13, model in #37).
+-- (#13; the two-list model is #37.)
 --
 -- The plan needs no separate requirements pass. The target is the baseline minus a
 -- dependents-closed set (listed addons plus everything that transitively requires them),

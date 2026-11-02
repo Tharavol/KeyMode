@@ -5,10 +5,10 @@ max_line_length = 120
 -- `luacheck .` would otherwise lint the toolchain along with the addon.
 exclude_files = {".luarocks/**", ".luarocks", "lua_modules/**", ".claude/**"}
 
--- WoW event handlers always receive (self, event, ...); ignore unused args
--- entirely since callbacks must match Blizzard's fixed signatures.
+-- Methods take an implicit `self` whether they use it or not. Every other unused
+-- argument is flagged: callbacks with a fixed signature name the ones they skip `_`.
 ignore = {
-    "212", -- unused argument
+    "212/self", -- unused implicit self
 }
 
 globals = {
@@ -54,11 +54,8 @@ read_globals = {
     "GetInstanceInfo", "C_LFGList",
 
     -- Safe-to-switch guard inputs (#10), also probed by `/km debug probe scan` (#6);
-    -- each is nil-checked, IsEncounterInProgress unverified on 12.x
+    -- each is nil-checked
     "C_ChallengeMode", "IsEncounterInProgress",
-
-    -- Pre-C_AddOns fallback the version helper still branches on
-    "GetAddOnMetadata",
 }
 
 -- The test harness deliberately writes WoW globals into its stub environment.

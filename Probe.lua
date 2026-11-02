@@ -1,16 +1,14 @@
 -- Probe.lua
 -- SPDX-License-Identifier: GPL-3.0-or-later
 --
--- `/km debug probe`: the in-game half of #6. The enable-state API is documented one way
--- (a non-nilable `character`, default "0") and used another by Blizzard's own AddOn list
--- (the player's GUID, or nil for all characters), so the switch engine is not built
--- until the live client has answered which is right. The probe prints what the client
--- reports for every candidate character key and lets each mutation and save step be run
--- by hand, one at a time, with a reload or logout in between.
+-- `/km debug probe`: read-only diagnostics of what the client reports -- one addon's
+-- enable state under every character key, a scan of every addon, the inventory and its
+-- cascades, `## Category` values, and what the switch prompts see.
 --
--- The one exception to "only Switch.lua mutates": enable/disable/save/reset here act on
--- the KeyModeProbe fixture addon (tests/fixtures/KeyModeProbe) and nothing else. Reads
--- work on any installed addon.
+-- The enable-state probes of #6 (enable/disable/save/reset on the KeyModeProbe fixture
+-- addon, tests/fixtures/KeyModeProbe) are the one exception to "only Switch.lua
+-- mutates". They exist for development only: they sit in do-not-package blocks, which
+-- the release packager strips, so the shipped addon has none of them.
 
 local _, ns = ...
 
@@ -54,12 +52,6 @@ local function FindKey(label)
     for _, key in ipairs(CharacterKeys()) do
         if key.label == label then return key end
     end
-end
-
-local function KeyLabels()
-    local labels = {}
-    for i, key in ipairs(CharacterKeys()) do labels[i] = key.label end
-    return table.concat(labels, "|")
 end
 
 local function Installed(name)
@@ -110,6 +102,13 @@ function Probe:Report(name)
         .. tostring((FindKey("full") or {}).value))
 end
 
+--@do-not-package@
+local function KeyLabels()
+    local labels = {}
+    for i, key in ipairs(CharacterKeys()) do labels[i] = key.label end
+    return table.concat(labels, "|")
+end
+
 -- Changes the fixture addon only. Prints the report straight after, which answers
 -- "does GetAddOnEnableState see the change before SaveAddOns and a reload".
 function Probe:Set(enable, label)
@@ -132,6 +131,7 @@ function Probe:Set(enable, label)
         .. label .. ") " .. (ok and "returned" or ("raised: " .. tostring(err))))
     self:Report(Probe.TARGET)
 end
+--@end-do-not-package@
 
 -- One pass over every installed addon for the facts the inventory and dependency graph
 -- (#7, #8) and the suggested lists (#21) build on, plus whether each API the guard
@@ -284,7 +284,16 @@ function Probe:Run(argument)
         return
     end
     Out("---- " .. tostring(name) .. "-" .. tostring(realm) .. ": /km debug probe " .. (argument or ""))
-    if lower == "" then
+    if lower == "scan" then
+        self:Scan()
+    elseif lower == "inventory" then
+        self:Inventory(rest)
+    elseif lower == "categories" then
+        self:Categories()
+    elseif lower == "lfg" then
+        self:Lfg()
+    --@do-not-package@
+    elseif lower == "" then
         self:Report(Probe.TARGET)
     elseif lower == "enable" or lower == "disable" then
         self:Set(lower == "enable", rest:lower())
@@ -295,19 +304,15 @@ function Probe:Run(argument)
         C_AddOns.ResetAddOns()
         Out("Probe: ResetAddOns() called.")
         self:Report(Probe.TARGET)
-    elseif lower == "scan" then
-        self:Scan()
-    elseif lower == "inventory" then
-        self:Inventory(rest)
-    elseif lower == "categories" then
-        self:Categories()
-    elseif lower == "lfg" then
-        self:Lfg()
+    --@end-do-not-package@
+    elseif lower == "" then
+        Out("Probe: expected scan, inventory [addon], categories, lfg, clear or an addon name.")
     else
         self:Report(sub)
     end
 end
 
+--@do-not-package@
 -- While a probe session is open (the log is non-empty), every login and reload records
 -- whether the fixture actually loaded and its state under every key, so "did the change
 -- take effect" is answered on the next character or after the next /reload without
@@ -324,3 +329,4 @@ loginFrame:SetScript("OnEvent", function()
         .. Probe.TARGET .. " loaded = " .. tostring(C_AddOns.IsAddOnLoaded(Probe.TARGET)))
     Probe:Report(Probe.TARGET)
 end)
+--@end-do-not-package@

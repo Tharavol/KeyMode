@@ -294,8 +294,12 @@ local COMMANDS = {
         name = "debug",
         help = {
             Cmd("/km debug [on|off]") .. " - toggle or set debug messages",
-            Cmd("/km debug probe [scan|inventory|categories|lfg|enable|disable|save|reset|clear]")
-                .. " - addon API diagnostics (see docs/HANDOFF.md)",
+            Cmd("/km debug probe <scan|inventory [addon]|categories|lfg|clear|addon>")
+                .. " - addon API diagnostics, read only",
+            --@do-not-package@
+            Cmd("/km debug probe [enable|disable <key>|save|reset]")
+                .. " - enable-state probes on the KeyModeProbe fixture (development only, docs/HANDOFF.md)",
+            --@end-do-not-package@
             Cmd("/km debug trigger <arrival|group|departure>") .. " - show a simulated switch prompt",
         },
         handler = function(argument, rest)

@@ -153,6 +153,8 @@ function M.AddAddon(fixtures, name, opts)
         enabledFor = opts.enabledFor or {},
         loaded = opts.loaded or false,
         metadata = opts.metadata or {},
+        refuse = opts.refuse, -- EnableAddOn/DisableAddOn raise for it, as a client refusal would
+        unreadable = opts.unreadable, -- GetAddOnDependencies raises for it
     }
     if opts.enabled ~= false and opts.enabledFor == nil then
         entry.enabledFor[fixtures.player.guid] = true
@@ -223,9 +225,19 @@ local function MakeAddOnsApi(fixtures)
         return on == total and ENABLE_STATE.All or ENABLE_STATE.Some
     end
 
+    -- Each addon's state as of the last SaveAddOns, copied on its first change after it,
+    -- so ResetAddOns can undo every unsaved change the way the client does (#6).
+    local unsaved = {}
+
     local function SetEnabled(nameOrIndex, character, value)
         local entry = FindAddon(fixtures, nameOrIndex)
         if not entry then return end
+        if entry.refuse then error("refused: " .. entry.name, 3) end
+        if not unsaved[entry] then
+            local copy = {}
+            for key, on in pairs(entry.enabledFor) do copy[key] = on end
+            unsaved[entry] = copy
+        end
         local who = ResolveCharacter(fixtures, character)
         if who == nil then return end
         if who ~= "all" then
@@ -248,6 +260,7 @@ local function MakeAddOnsApi(fixtures)
     function api.GetAddOnDependencies(nameOrIndex)
         local entry = FindAddon(fixtures, nameOrIndex)
         if not entry then return end
+        if entry.unreadable then error("unreadable: " .. entry.name, 2) end
         return unpack(entry.deps)
     end
 
@@ -272,8 +285,16 @@ local function MakeAddOnsApi(fixtures)
         return entry and entry.metadata[field]
     end
 
-    function api.SaveAddOns() calls[#calls + 1] = { "SaveAddOns" } end
-    function api.ResetAddOns() calls[#calls + 1] = { "ResetAddOns" } end
+    function api.SaveAddOns()
+        calls[#calls + 1] = { "SaveAddOns" }
+        unsaved = {}
+    end
+
+    function api.ResetAddOns()
+        calls[#calls + 1] = { "ResetAddOns" }
+        for entry, saved in pairs(unsaved) do entry.enabledFor = saved end
+        unsaved = {}
+    end
 
     return api
 end
@@ -439,7 +460,14 @@ function M.Load(configure, fixtures)
 
     local ns = {}
     for _, path in ipairs(TocFiles()) do
-        local chunk = assert(loadfile(path))
+        local chunk
+        if fixtures.packaged then
+            local handle = assert(io.open(path, "r"))
+            chunk = assert(loadstring(M.Packaged(handle:read("*a")), "@" .. path))
+            handle:close()
+        else
+            chunk = assert(loadfile(path))
+        end
         setfenv(chunk, env)
         chunk("KeyMode", ns)
     end
@@ -489,6 +517,24 @@ function M.Reload(env)
     M.Fire(new, "ADDON_LOADED", "KeyMode")
     M.Fire(new, "PLAYER_LOGIN")
     return new
+end
+
+-- `source` as the release packager ships it. Like the packager's line filter, every line
+-- from one containing the do-not-package start marker through the next one containing
+-- the end marker is dropped, markers included, wherever on the line they appear. Set
+-- `fixtures.packaged` in a Load or Boot `configure` to load the addon that way.
+function M.Packaged(source)
+    local kept, skipping = {}, false
+    for line in (source:gsub("\r\n", "\n") .. "\n"):gmatch("([^\n]*)\n") do
+        if skipping then
+            if line:find("--@end-do-not-package@", 1, true) then skipping = false end
+        elseif line:find("--@do-not-package@", 1, true) then
+            skipping = true
+        else
+            kept[#kept + 1] = line
+        end
+    end
+    return table.concat(kept, "\n")
 end
 
 function M.Boot(configure)

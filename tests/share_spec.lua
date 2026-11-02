@@ -94,6 +94,7 @@ return function(stub, T)
         T.AssertTrue(DecodeError("[instance]\nA\n"):find("KeyMode lists 1", 1, true), "missing header")
         T.AssertTrue(DecodeError("KeyMode lists\n"):find("first line", 1, true), "no version")
         T.AssertTrue(DecodeError("KeyMode lists 2\n[instance]\n"):find("newer KeyMode", 1, true), "newer")
+        T.AssertEqual(DecodeError("KeyMode lists 0\n[instance]\n"), "Unsupported list format 0.", "zero")
     end)
 
     T.Test("decode errors: a name before a section and an unknown section name the line", function()

@@ -4,7 +4,7 @@
 -- Import and export of the Instance, World and protect lists as plain text, so a setup
 -- can be copied between accounts or shared with another player. Encode, Decode and Diff
 -- are pure: no ns.db access, no C_AddOns calls, no chat output. Apply is thin and makes
--- every change through the Profiles methods it is handed. Filled in by v0.4.0 (#20).
+-- every change through the Profiles methods it is handed. (#20)
 --
 -- The text format, version 1:
 --

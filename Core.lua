@@ -45,8 +45,7 @@ end
 -- substitutes `@project-version@` with the release tag, which already carries a "v";
 -- an unbuilt git clone leaves the token as-is, which is reported as "dev".
 function ns.GetAddonVersion()
-    local getMeta = (C_AddOns and C_AddOns.GetAddOnMetadata) or GetAddOnMetadata
-    local version = getMeta and getMeta(ADDON_NAME, "Version")
+    local version = C_AddOns.GetAddOnMetadata(ADDON_NAME, "Version")
     if type(version) ~= "string" or version == "" or version:match("^@.*@$") then
         return "dev"
     end

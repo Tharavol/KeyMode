@@ -5,7 +5,7 @@
 -- enumerates addons (name, title, loadable/reason, load-on-demand, enable state for the
 -- current character), builds the dependency graph (required deps and reverse
 -- dependents), and answers the safe-to-switch question. Pure where it can be, so the
--- offline suite covers it. Filled in by v0.2.0 (#7, #8, #10).
+-- offline suite covers it. (#7, #8, #10)
 
 local _, ns = ...
 
@@ -16,7 +16,7 @@ ns.Inventory = Inventory
 -- Inventory (#7)
 --
 -- One read of every installed addon into plain records, the input to the dependency
--- graph and (v0.3.0) the switch plan. The enable state is read for this character by
+-- graph and the switch plan. The enable state is read for this character by
 -- GUID: the live client treats the GUID and the name as the same character, while nil
 -- and "0" mean every character (#6, docs/HANDOFF.md "API facts").
 --------------------------------------------------------------------------
@@ -28,36 +28,46 @@ ns.Inventory = Inventory
 -- `category` is the TOC's `## Category` (#21), nil when the TOC sets none or an empty one.
 -- `deps` and `optionalDeps` are spelled as each TOC wrote them; BuildGraph matches
 -- them to folder names case-insensitively.
-function Inventory:Scan()
-    local guid = UnitGUID("player")
-    local none = Enum.AddOnEnableState.None
-    local records = {}
-    for index = 1, C_AddOns.GetNumAddOns() do
-        local name, title, _, loadable, reason = C_AddOns.GetAddOnInfo(index)
-        if name then
-            local category = C_AddOns.GetAddOnMetadata(index, "Category")
-            records[#records + 1] = {
-                index = index,
-                name = name,
-                title = title or name,
-                category = category ~= "" and category or nil,
-                loadable = loadable and true or false,
-                reason = reason ~= "" and reason or nil,
-                loadOnDemand = C_AddOns.IsAddOnLoadOnDemand(index) and true or false,
-                loaded = C_AddOns.IsAddOnLoaded(index) and true or false,
-                enabled = C_AddOns.GetAddOnEnableState(index, guid) > none,
-                deps = { C_AddOns.GetAddOnDependencies(index) },
-                optionalDeps = { C_AddOns.GetAddOnOptionalDependencies(index) },
-            }
-        end
-    end
-    return records
+local function ReadAddon(index, guid)
+    local name, title, _, loadable, reason = C_AddOns.GetAddOnInfo(index)
+    if not name then return nil end
+    local category = C_AddOns.GetAddOnMetadata(index, "Category")
+    return {
+        index = index,
+        name = name,
+        title = title or name,
+        category = category ~= "" and category or nil,
+        loadable = loadable and true or false,
+        reason = reason ~= "" and reason or nil,
+        loadOnDemand = C_AddOns.IsAddOnLoadOnDemand(index) and true or false,
+        loaded = C_AddOns.IsAddOnLoaded(index) and true or false,
+        enabled = C_AddOns.GetAddOnEnableState(index, guid) > Enum.AddOnEnableState.None,
+        deps = { C_AddOns.GetAddOnDependencies(index) },
+        optionalDeps = { C_AddOns.GetAddOnOptionalDependencies(index) },
+    }
 end
 
--- The installed addons and their dependency graph, read now.
+-- Also returns a list of the addons the client failed to answer for, each as
+-- "#index: error". They are left out of the records; Switch refuses to switch while
+-- the list is not empty, since a plan built without them could not restore them.
+function Inventory:Scan()
+    local guid = UnitGUID("player")
+    local records, errors = {}, {}
+    for index = 1, C_AddOns.GetNumAddOns() do
+        local ok, record = pcall(ReadAddon, index, guid)
+        if not ok then
+            errors[#errors + 1] = "#" .. index .. ": " .. tostring(record)
+        elseif record then
+            records[#records + 1] = record
+        end
+    end
+    return records, errors
+end
+
+-- The installed addons, their dependency graph and Scan's errors, read now.
 function Inventory:Read()
-    local records = self:Scan()
-    return records, Inventory.BuildGraph(records)
+    local records, errors = self:Scan()
+    return records, Inventory.BuildGraph(records), errors
 end
 
 --------------------------------------------------------------------------
@@ -66,12 +76,11 @@ end
 -- Pure functions over a plain list of records, `{ name = "Altoholic", deps = {...},
 -- optionalDeps = {...} }`; any other field is ignored. Nothing here touches C_AddOns:
 -- the inventory (#7) builds the records, this turns them into edges, and the switch
--- plan (v0.3.0) walks the edges.
+-- plan walks the edges.
 --
--- Names are matched case-insensitively, because a TOC's `## Dependencies:` line is
--- often written in a different case from the folder it names (`datastore` for
--- `DataStore`). Whether the client already normalises that is unverified (#6), so the
--- graph tolerates it either way. Outputs always use the installed folder's spelling.
+-- Names are matched case-insensitively: a TOC's `## Dependencies:` line is often written
+-- in a different case from the folder it names (`datastore` for `DataStore`), and the
+-- client returns it as written (#6). Outputs always use the installed folder's spelling.
 --------------------------------------------------------------------------
 
 -- Case-insensitive, with the raw string as tie-breaker, so two names differing only in
@@ -214,7 +223,7 @@ end
 -- encounter. Each API is looked up at call time and nil-guarded. A missing API means the
 -- check is unavailable on this client, not that it is unsafe: blocking on it would lock
 -- the player out of switching entirely, so it is skipped rather than counted against
--- them. IsEncounterInProgress in particular is not yet confirmed to exist on 12.x.
+-- them. Each exists on 12.x (#6); the guard stays for a client that drops one.
 --------------------------------------------------------------------------
 
 -- True only when the client has `fn` and it answers yes; an unavailable check is a no.
