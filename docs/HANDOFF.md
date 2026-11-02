@@ -10,11 +10,43 @@ and every addon requiring something on it. A switch is: plan, apply by GUID,
 `SaveAddOns()`, `ReloadUI()`. **Off** restores the baseline exactly and ends
 management.
 
+## Resuming v1.0.0
+
+State on 2026-11-01: nothing in v1.0.0 has run in the client yet. Automated checks pass.
+
+Setup on a new machine:
+
+1. `git clone https://github.com/Tharavol/KeyMode`, then `git switch milestone/v1.0.0`.
+2. Set the identity for this repo, since only the public handle may appear in history:
+   `git config user.name Tharavol` and
+   `git config user.email 307232816+Tharavol@users.noreply.github.com`.
+3. Run the checks from the repository root: `luajit tests/run_tests.lua` (Lua 5.1 or
+   LuaJIT; the tests use `setfenv`, so newer Lua fails), `luacheck .`, and
+   `lua scripts/validate-toc.lua` (it reads the files git tracks, so `git add` new ones
+   first).
+
+What is left, in order:
+
+1. **In-game QA (#28).** Install the zip from the `v1.0.0-beta.1` pre-release and work
+   through the checklist in the issue. Failures go to #29.
+2. **Rough-edge sweep (#29).** Fix what QA finds on `milestone/v1.0.0`, and review the
+   unguarded `C_AddOns` calls listed in the issue. Tag another beta only if a fix needs
+   rechecking in the client. `ci.yml` does not run on a branch push alone; PR #44 is
+   what runs it.
+3. **Release (#31).** Record the in-game check here, mark PR #44 ready and merge it,
+   which closes #27, #30 and #42. Tag `v1.0.0` on `main`, which runs `release.yml`, and
+   check the release and its zip. Close #28, #29 and #31 by hand, then close the
+   milestone, which never closes itself.
+
+#43 (CurseForge and Wago) stays in the backlog. The repository has no upload tokens and
+the TOC has no project IDs, so releases reach GitHub only.
+
 ## Current state
 
 - v0.1.0 to v0.5.0 released as pre-releases. v1.0.0, the polish pass (#27-#31, #42),
-  is on `milestone/v1.0.0`: tests (#27), code polish (#42) and docs (#30) are done; the
-  in-game QA matrix (#28) and the in-game half of the rough-edge sweep (#29) are next.
+  is on `milestone/v1.0.0`, open as draft PR #44: tests (#27), code polish (#42) and
+  docs (#30) are done, and `v1.0.0-beta.1` is published as a GitHub pre-release. See
+  "Resuming v1.0.0" below for what is left.
   Files, in TOC load order (plus `Bindings.xml`, which the client loads from the folder
   by itself):
   - `Core.lua` -- namespace, `ns.Print`, `ns.Debug`, `ns.GetAddonVersion`, SavedVariables

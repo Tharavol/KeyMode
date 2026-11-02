@@ -13,7 +13,7 @@ lands and is verified before any UI goes on top of it.
 | v0.3.0 | Instance and World lists, switch engine | Instance, World and Off from the command line, restore is exact | Released 2026-10-12 |
 | v0.4.0 | Preview dialog and list editor | No list editing or switching needs a slash command | Released 2026-10-12 |
 | v0.5.0 | Triggers and entry points | Arrival and departure prompts, key binding | Released 2026-10-12 |
-| v1.0.0 | Polish pass and stable release | QA matrix passed, docs final, v1.0.0 tagged and released | In progress |
+| v1.0.0 | Polish pass and stable release | In-game QA passed, docs final, v1.0.0 tagged and released | In progress |
 
 ## v0.1.0 -- Scaffolding and command surface
 

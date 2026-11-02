@@ -113,7 +113,8 @@ Development
 -----------
 - `luacheck .` lints the addon.
 - `lua scripts/validate-toc.lua` runs the same TOC check CI does, from the repository root.
-- `lua tests/run_tests.lua` runs the addon against a stubbed WoW API, from the repository root.
+- `luajit tests/run_tests.lua` runs the addon against a stubbed WoW API, from the repository
+  root. It needs Lua 5.1 or LuaJIT.
 - Design notes and verified API facts: [docs/HANDOFF.md](docs/HANDOFF.md); milestone
   plan: [docs/PLAN.md](docs/PLAN.md).
 
