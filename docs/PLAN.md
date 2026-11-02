@@ -118,12 +118,11 @@ The milestone and issue titles keep their original names.
 - **Test coverage (#27).** Every pure function in Inventory/Profiles/Switch covered,
   including the dependency edge cases found during v0.2.0-v0.5.0. A line-coverage run
   over the suite drove the additions.
-- **In-game QA matrix (#28).** Several characters on different realms; addons added and
-  removed between switches; load-on-demand addons; an addon with a load error; deep
-  dependency trees (DBM, Details, DataStore); reload during a prompt; logout in M+ mode.
-  Plus the v0.5.0 cases so far covered only offline: arrival in a Mythic dungeon,
-  departure after a completed key, the group prompt as an applicant, and a prompt
-  deferred by combat.
+- **In-game QA (#28).** Only what the stub tests cannot prove, on the 12.1.5 client from
+  a packaged beta: load, import and export, a real switch, another character and logout
+  in Instance mode, a prompt deferred by combat, UI scale, and Off. One keystone run
+  covers the group, arrival and departure prompts. The issue lists the checks and why
+  the other cases were dropped.
 - **Code polish pass (#42).** Developer probes kept out of the packaged zip, guarded
   C_AddOns calls in Switch and Inventory, dead code and stale comments removed, stricter
   luacheck.
